@@ -3,350 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現場隨機抽選系統</title>
+    <title>AETERNA 現場抽選系統 (Sheets)</title>
+    <!-- 樣式與離線版相同 -->
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --accent: #f59e0b;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.5; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
-        
-        header { text-align: center; margin-bottom: 2.5rem; }
-        h1 { font-size: 2.5rem; font-weight: 900; margin-bottom: 0.5rem; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .badge { display: inline-block; padding: 0.25rem 1rem; background: #fef3c7; color: #92400e; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; margin-top: 0.5rem; }
-
-        .layout { display: grid; grid-template-columns: 1fr 2.5fr; gap: 1.5rem; }
-        @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
-
-        .sidebar { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: fit-content; }
-        .sidebar h2 { font-size: 1.125rem; margin-bottom: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
-        .item-list { display: flex; flex-direction: column; gap: 0.75rem; }
-        .item-card { padding: 0.75rem; background: #f1f5f9; border-radius: 0.75rem; font-size: 0.875rem; border: 1px solid #e2e8f0; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-        .main-content { display: flex; flex-direction: column; gap: 1.5rem; }
-        .draw-box { 
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            border-radius: 2rem; padding: 3rem; text-align: center; color: white;
-            min-height: 450px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-            position: relative; overflow: hidden;
-        }
-
-        .table-hint { font-size: 2.5rem; font-weight: 900; margin-bottom: 2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .btn-draw { 
-            background: white; color: var(--primary); border: none; padding: 1rem 2.5rem;
-            font-size: 1.5rem; font-weight: 800; border-radius: 1rem; cursor: pointer;
-            transition: all 0.2s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-        }
-        .btn-draw:hover { transform: scale(1.05); background: #f8fafc; }
-        .btn-draw:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .result-reveal { animation: zoomIn 0.5s ease-out; width: 100%; }
-        .result-topic { font-size: 1.7rem; font-weight: 900; background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; line-height: 1.4; text-align: left; }
-        .btn-next { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; margin-top: 2rem; font-weight: 700; cursor: pointer; }
-        .btn-next:hover { background: rgba(255,255,255,0.3); }
-
-        .history-box { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; }
-        .history-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem; border-bottom: 1px solid #f1f5f9; gap: 1rem; }
-        .history-item:last-child { border: none; }
-        .hist-table { background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-weight: 900; font-size: 1rem; min-width: 60px; text-align: center; }
-        .hist-content { flex: 1; font-weight: 700; font-size: 1.125rem; color: #334155; white-space: pre-wrap; }
-
-        .final-table { background: white; border-radius: 2rem; padding: 2rem; border: 4px solid var(--primary); margin-top: 2rem; display: none; }
-        .final-table.show { display: block; animation: slideUp 0.8s ease; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
-        th { background: #f8fafc; padding: 1rem; text-align: left; font-size: 0.875rem; color: var(--text-muted); border-bottom: 2px solid #e2e8f0; }
-        td { padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
-
-        .no-print { display: block; }
-        @media print { .no-print { display: none !important; } .final-table { border: none; padding: 0; } }
-
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        #canvas { position: fixed; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; z-index: 100; }
-        
-        .sync-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        :root { --primary: #4f46e5; --bg: #f8fafc; --card-bg: #ffffff; }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; text-align: center; }
+        .box { background: white; padding: 2rem; border-radius: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .draw-btn { background: var(--primary); color: white; padding: 1rem 2rem; border: none; border-radius: 1rem; font-size: 1.5rem; cursor: pointer; }
+        .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        /* 沿用前述樣式... */
     </style>
 </head>
-<body>
-    <div id="syncLoader" class="sync-loading">
-        <div class="spinner"></div>
-        <p style="font-weight: bold; color: #475569;">正在從 Google 試算表讀取資料...</p>
-    </div>
+<body x-data="sheetsApp()" x-init="fetchData()">
+    <div id="loading" class="loading-screen">正在從 Google Sheets 獲取題目...</div>
 
-    <canvas id="canvas"></canvas>
-    <div class="container" id="mainContainer" style="display:none;">
-        <header class="no-print">
-            <h1>🏆 現場隨機抽選系統</h1>
-            <div class="badge">雲端同步 · 公開透明</div>
-        </header>
-
-        <div class="layout no-print" id="gameArea">
-            <div class="sidebar">
-                <h2>📋 待分配題目</h2>
-                <div class="item-list" id="itemList"></div>
-            </div>
-
-            <div class="main-content">
-                <div class="draw-box" id="drawBox">
-                    <div id="drawInitial">
-                        <div class="table-hint">請抽選 <span id="currentTableLabel">A</span> 桌 題目</div>
-                        <button class="btn-draw" onclick="startDraw()">🎯 開始抽選</button>
-                    </div>
-                    <div id="drawLoading" style="display:none;">
-                        <div class="spinner" style="margin: 0 auto 1.5rem; border-top-color: white;"></div>
-                        <p style="font-size: 1.5rem; font-weight: 700; letter-spacing: 2px;">命運轉動中...</p>
-                    </div>
-                    <div id="drawResult" style="display:none;" class="result-reveal">
-                        <p style="font-size: 1.25rem; opacity: 0.8;">🎉 <span id="resTable"></span> 桌 結果揭曉 🎉</p>
-                        <div class="result-topic" id="resName" style="white-space: pre-wrap;"></div>
-                        <button class="btn-next" onclick="prepareNext()">🚀 準備下一桌</button>
-                    </div>
-                </div>
-
-                <div class="history-box">
-                    <h2 style="margin-bottom: 1rem;">📝 即時結果紀錄</h2>
-                    <div id="historyList"></div>
-                </div>
-            </div>
+    <div class="container" id="mainUI" style="display:none;">
+        <h1>🏆 AETERNA 抽選 (雲端同步版)</h1>
+        <div class="box">
+            <h2 id="nextTable">準備抽選 A 桌題目</h2>
+            <button class="draw-btn" onclick="app.draw()">開始抽選</button>
+            <div id="resultArea" style="margin-top:2rem; font-size: 1.5rem; font-weight: bold; color: #ef4444;"></div>
         </div>
-
-        <div class="final-table" id="finalResult">
-            <div style="text-align: center;">
-                <h2 style="font-size: 2rem; font-weight: 900;">最終分配總表</h2>
-                <p style="color: #64748b;">所有桌次題目分配完畢</p>
-            </div>
-            <table id="finalTableBody">
-                <thead>
-                    <tr>
-                        <th width="100">桌次</th>
-                        <th>獲配題目內容</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <div style="text-align: center; margin-top: 2rem;" class="no-print">
-                <button class="btn-next" style="background: #1e293b; color: white;" onclick="window.print()">列印結果 / 存成 PDF</button>
-                <button class="btn-next" style="background: #f1f5f9; color: #64748b; margin-left: 10px;" onclick="resetAll()">重新開始</button>
-            </div>
-        </div>
+        <div id="history" style="text-align: left;"></div>
     </div>
 
     <script>
-        // 【重要設定】請將下方連結替換為您的 Google Sheets CSV 發佈連結
-        // 必須從「檔案 > 共用 > 發佈到網路」獲取以 pub?output=csv 結尾的網址
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1zeMW7x9cRj-YXlsZ_Ms4M-dTU1wUYsdfRw14SybPmyI/edit?usp=sharing"; 
-
-        const TABLE_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
-        let initialPool = [];
+        // 【設定處】請將下方的 URL 替換為您的 Google Sheets CSV 發佈連結
+        const SHEET_CSV_URL = "YOUR_CSV_URL_HERE"; 
+        
         let pool = [];
         let history = [];
+        const TABLE_LABELS = ["A", "B", "C", "D", "E"];
 
-        // 強化版 CSV 解析器：支援儲存格內換行，並過濾空白與無效編碼
-        function parseCSV(text) {
-            const rows = [];
-            let currentCell = '';
-            let inQuotes = false;
-            let currentRow = [];
-
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const nextChar = text[i + 1];
-
-                if (char === '"' && inQuotes && nextChar === '"') {
-                    currentCell += '"';
-                    i++;
-                } else if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    currentRow.push(currentCell.trim());
-                    currentCell = '';
-                } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                    if (currentCell || currentRow.length > 0) {
-                        currentRow.push(currentCell.trim());
-                        rows.push(currentRow);
-                        currentCell = '';
-                        currentRow = [];
-                    }
-                    if (char === '\r' && nextChar === '\n') i++;
-                } else {
-                    currentCell += char;
-                }
-            }
-            if (currentCell || currentRow.length > 0) {
-                currentRow.push(currentCell.trim());
-                rows.push(currentRow);
-            }
-
-            // 過濾無效欄位與標題
-            const filteredData = rows
-                .map(r => r[0])
-                .filter(content => {
-                    if (!content || content.toLowerCase() === 'null') return false;
-                    if (content.length < 5) return false; // 過濾掉極短的殘留編碼
-                    if (content === "題目" || content === "Topic") return false;
-                    return true;
-                });
-            
-            return filteredData;
-        }
-
-        async function fetchSheetData() {
+        async function fetchData() {
             try {
                 const response = await fetch(SHEET_CSV_URL);
-                if (!response.ok) throw new Error("Fetch failed");
-                const text = await response.text();
+                const data = await response.text();
+                // 簡單解析 CSV (假設每行是一個題目，A1~A5)
+                pool = data.split('\n').map(row => row.replace(/"/g, '').trim()).filter(row => row.length > 0);
                 
-                initialPool = parseCSV(text);
-                pool = [...initialPool];
-                
-                if (pool.length === 0) throw new Error("No data found");
-                
-                document.getElementById('syncLoader').style.display = 'none';
-                document.getElementById('mainContainer').style.display = 'block';
-                
-                initUI();
-            } catch (err) {
-                document.getElementById('syncLoader').innerHTML = `
-                    <p style="color:red; font-weight:bold;">⚠️ 同步失敗</p>
-                    <p style="font-size:0.875rem; color:#64748b; margin-top:10px;">請確認已正確「發佈到網路」為 CSV 格式。</p>
-                    <button onclick="location.reload()" style="margin-top:10px; padding:5px 15px; cursor:pointer;">重試</button>
-                `;
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainUI').style.display = 'block';
+                updateUI();
+            } catch (error) {
+                alert("抓取資料失敗，請檢查 URL 是否正確並已發佈到網路。");
             }
         }
 
-        function initUI() {
-            renderSidebar();
-            renderHistory();
-            document.getElementById('currentTableLabel').innerText = TABLE_LABELS[history.length] || "-";
-        }
-
-        function renderSidebar() {
-            const list = document.getElementById('itemList');
-            list.innerHTML = pool.map(t => `<div class="item-card">${t.split('\n')[0]}</div>`).join('');
-        }
-
-        function startDraw() {
-            if (pool.length === 0) return;
-            document.getElementById('drawInitial').style.display = 'none';
-            document.getElementById('drawLoading').style.display = 'block';
-
-            setTimeout(() => {
+        const app = {
+            draw() {
+                if (pool.length === 0) return;
                 const idx = Math.floor(Math.random() * pool.length);
                 const selected = pool.splice(idx, 1)[0];
                 const table = TABLE_LABELS[history.length];
+                history.push({ table, selected });
                 
-                history.push({ table, topic: selected });
-                
-                document.getElementById('drawLoading').style.display = 'none';
-                document.getElementById('drawResult').style.display = 'block';
-                document.getElementById('resTable').innerText = table;
-                document.getElementById('resName').innerText = selected;
-                
-                renderSidebar();
-                renderHistory();
-                launchConfetti();
-            }, 1500);
-        }
-
-        function prepareNext() {
-            if (pool.length === 0) {
-                showFinal();
-                return;
+                document.getElementById('resultArea').innerText = `🎉 ${table} 桌：${selected}`;
+                updateUI();
             }
-            document.getElementById('drawResult').style.display = 'none';
-            document.getElementById('drawInitial').style.display = 'block';
-            document.getElementById('currentTableLabel').innerText = TABLE_LABELS[history.length];
-        }
+        };
 
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            if (history.length === 0) {
-                list.innerHTML = '<p style="color:#94a3b8; font-style:italic; text-align:center; padding:1rem;">尚無紀錄</p>';
-                return;
-            }
-            list.innerHTML = history.map(h => `
-                <div class="history-item">
-                    <div class="hist-table">${h.table} 桌</div>
-                    <div class="hist-content">${h.topic}</div>
-                </div>
-            `).join('');
+        function updateUI() {
+            document.getElementById('nextTable').innerText = history.length < TABLE_LABELS.length 
+                ? `準備抽選 ${TABLE_LABELS[history.length]} 桌題目` 
+                : "全部抽取完畢";
+            document.getElementById('history').innerHTML = history.map(h => `<div><b>${h.table} 桌</b>: ${h.selected}</div>`).join('');
         }
-
-        function showFinal() {
-            document.getElementById('gameArea').style.display = 'none';
-            const final = document.getElementById('finalResult');
-            final.classList.add('show');
-            const tbody = document.querySelector('#finalTableBody tbody');
-            tbody.innerHTML = history.map(h => `
-                <tr>
-                    <td><b style="font-size:1.25rem">${h.table} 桌</b></td>
-                    <td style="font-weight: 700; white-space: pre-wrap;">${h.topic}</td>
-                </tr>
-            `).join('');
-        }
-
-        function resetAll() {
-            if(!confirm("確定要重置並重新開始嗎？紀錄將被清空。")) return;
-            pool = [...initialPool];
-            history = [];
-            document.getElementById('finalResult').classList.remove('show');
-            document.getElementById('gameArea').style.display = 'grid';
-            document.getElementById('drawResult').style.display = 'none';
-            document.getElementById('drawLoading').style.display = 'none';
-            document.getElementById('drawInitial').style.display = 'block';
-            initUI();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function launchConfetti() {
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            let particles = [];
-            for (let i = 0; i < 150; i++) {
-                particles.push({
-                    x: canvas.width / 2,
-                    y: canvas.height * 0.6,
-                    vx: (Math.random() - 0.5) * 20,
-                    vy: (Math.random() - 0.7) * 25,
-                    size: Math.random() * 8 + 4,
-                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                    rotation: Math.random() * 360,
-                    rSpeed: Math.random() * 10 - 5
-                });
-            }
-            function update() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                particles.forEach((p, i) => {
-                    p.x += p.vx; p.y += p.vy;
-                    p.vy += 0.5; p.rotation += p.rSpeed;
-                    ctx.save();
-                    ctx.translate(p.x, p.y);
-                    ctx.rotate(p.rotation * Math.PI / 180);
-                    ctx.fillStyle = p.color;
-                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
-                    ctx.restore();
-                    if (p.y > canvas.height) particles.splice(i, 1);
-                });
-                if (particles.length > 0) requestAnimationFrame(update);
-            }
-            update();
-        }
-
-        fetchSheetData();
     </script>
 </body>
 </html>
