@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現場隨機抽選系統 (雲端同步)</title>
+    <title>現場隨機抽選系統</title>
     <style>
         :root {
             --primary: #4f46e5;
@@ -35,7 +35,7 @@
         .draw-box { 
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             border-radius: 2rem; padding: 3rem; text-align: center; color: white;
-            min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 450px; display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
             position: relative; overflow: hidden;
         }
@@ -82,14 +82,14 @@
 <body>
     <div id="syncLoader" class="sync-loading">
         <div class="spinner"></div>
-        <p style="font-weight: bold; color: #475569;">正在從 Google Sheets 同步資料...</p>
+        <p style="font-weight: bold; color: #475569;">正在從 Google 試算表讀取資料...</p>
     </div>
 
     <canvas id="canvas"></canvas>
     <div class="container" id="mainContainer" style="display:none;">
         <header class="no-print">
             <h1>🏆 現場隨機抽選系統</h1>
-            <div class="badge">雲端同步版 · 公開透明</div>
+            <div class="badge">雲端同步 · 公開透明</div>
         </header>
 
         <div class="layout no-print" id="gameArea">
@@ -144,27 +144,62 @@
     </div>
 
     <script>
-        // 【重要設定】請填寫您的 Google Sheets CSV 發佈連結
-        const SHEET_CSV_URL = "https://drive.google.com/file/d/1DXn2NrtyJyDDzHICy5Z6OzlM6w-oXABt/view?usp=drive_link"; 
+        // 【重要設定】請將下方連結替換為您的 Google Sheets CSV 發佈連結
+        // 必須從「檔案 > 共用 > 發佈到網路」獲取以 pub?output=csv 結尾的網址
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1zeMW7x9cRj-YXlsZ_Ms4M-dTU1wUYsdfRw14SybPmyI/edit?usp=sharing"; 
 
-        const TABLE_LABELS = ["A", "B", "C", "D", "E"];
+        const TABLE_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
         let initialPool = [];
         let pool = [];
         let history = [];
 
-        // 進階 CSV 解析：支援單個儲存格內包含換行符號
+        // 強化版 CSV 解析器：支援儲存格內換行，並過濾空白與無效編碼
         function parseCSV(text) {
-            const result = [];
-            const regex = /"(?:[^"]|"")*"|[^\r\n,]+/g;
-            let match;
-            while ((match = regex.exec(text)) !== null) {
-                let cell = match[0].trim();
-                if (cell.startsWith('"') && cell.endsWith('"')) {
-                    cell = cell.substring(1, cell.length - 1).replace(/""/g, '"');
+            const rows = [];
+            let currentCell = '';
+            let inQuotes = false;
+            let currentRow = [];
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"' && inQuotes && nextChar === '"') {
+                    currentCell += '"';
+                    i++;
+                } else if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    currentRow.push(currentCell.trim());
+                    currentCell = '';
+                } else if ((char === '\r' || char === '\n') && !inQuotes) {
+                    if (currentCell || currentRow.length > 0) {
+                        currentRow.push(currentCell.trim());
+                        rows.push(currentRow);
+                        currentCell = '';
+                        currentRow = [];
+                    }
+                    if (char === '\r' && nextChar === '\n') i++;
+                } else {
+                    currentCell += char;
                 }
-                if (cell.length > 0) result.push(cell);
             }
-            return result;
+            if (currentCell || currentRow.length > 0) {
+                currentRow.push(currentCell.trim());
+                rows.push(currentRow);
+            }
+
+            // 過濾無效欄位與標題
+            const filteredData = rows
+                .map(r => r[0])
+                .filter(content => {
+                    if (!content || content.toLowerCase() === 'null') return false;
+                    if (content.length < 5) return false; // 過濾掉極短的殘留編碼
+                    if (content === "題目" || content === "Topic") return false;
+                    return true;
+                });
+            
+            return filteredData;
         }
 
         async function fetchSheetData() {
@@ -184,8 +219,9 @@
                 initUI();
             } catch (err) {
                 document.getElementById('syncLoader').innerHTML = `
-                    <p style="color:red; font-weight:bold;">同步失敗！</p>
-                    <p style="font-size:0.875rem; color:#64748b; margin-top:10px;">請確認試算表已「發佈到網路」為 CSV 格式。</p>
+                    <p style="color:red; font-weight:bold;">⚠️ 同步失敗</p>
+                    <p style="font-size:0.875rem; color:#64748b; margin-top:10px;">請確認已正確「發佈到網路」為 CSV 格式。</p>
+                    <button onclick="location.reload()" style="margin-top:10px; padding:5px 15px; cursor:pointer;">重試</button>
                 `;
             }
         }
@@ -262,7 +298,7 @@
         }
 
         function resetAll() {
-            if(!confirm("確定要重置並重新開始嗎？所有的開獎紀錄將會被清空。")) return;
+            if(!confirm("確定要重置並重新開始嗎？紀錄將被清空。")) return;
             pool = [...initialPool];
             history = [];
             document.getElementById('finalResult').classList.remove('show');
