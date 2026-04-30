@@ -139,11 +139,11 @@
 
     <script>
         const INITIAL_TOPICS = [
-            "高齡者的門檻-(許竹君副組長)\n面對長者的「科技焦慮」與勞動力斷層，如何讓自主巡守/友善農地不再是負擔？",
-            "補貼翻轉為保育榮譽-(林惠珊負責人)\n獎勵金領久了會「鈍化」，如何讓農友或社區從「領錢辦事」轉為「自發投入」？",
-            "破解恐懼與防備-(王敬皓經理)\n農友對素昧平生的團隊防備心強，特別是普遍存在「土地出現保育類會被劃為保護區」的恐懼，導致不願多談或拒絕參與。除了獎勵金，我們還能透過哪些方式打破隔閡，消除對土地權益受損的焦慮？",
-            "專業調查與成效可視化-(劉建男副教授)\n如何降低生態調查的門檻，並將「看不見的監測數據」轉化為「有感的保育成果」，以強化農友與跨單位的認同感？",
-            "制度落實與責任邊界-(林育秀副研究員)\n當剛性的行政制度（預算、課時）遇上複雜的在地現實（滋擾、情緒），如何建立穩定的信任機制並釐清權責？"
+            "高齡者的門檻-陪伴講師：王敬皓經理\n面對長者的「科技焦慮」與勞動力斷層，如何讓自主巡守/友善農地不再是負擔？",
+            "補貼翻轉為保育榮譽-陪伴講師：林惠珊負責人\n獎勵金領久了會「鈍化」，如何讓農友或社區從「領錢辦事」轉為「自發投入」？",
+            "破解恐懼與防備-陪伴講師：許竹君副組長\n農友對素昧平生的團隊防備心強，特別是普遍存在「土地出現保育類會被劃為保護區」的恐懼，導致不願多談或拒絕參與。除了獎勵金，我們還能透過哪些方式打破隔閡，消除對土地權益受損的焦慮？",
+            "專業調查與成效可視化-陪伴講師：劉建男副教授\n如何降低生態調查的門檻，並將「看不見的監測數據」轉化為「有感的保育成果」，以強化農友與跨單位的認同感？",
+            "制度落實與責任邊界-陪伴講師：林育秀副研究員\n當剛性的行政制度（預算、課時）遇上複雜的在地現實（滋擾、情緒），如何建立穩定的信任機制並釐清權責？"
         ];
         const TABLE_LABELS = ["A", "B", "C", "D", "E"];
 
@@ -225,27 +225,20 @@
         function resetAll() {
             if(!confirm("確定要重置並重新開始嗎？所有的開獎紀錄將會被清空。")) return;
             
-            // 1. 重置數據變數
             pool = [...INITIAL_TOPICS];
             history = [];
 
-            // 2. 恢復 UI 顯示狀態
             document.getElementById('finalResult').classList.remove('show');
             document.getElementById('gameArea').style.display = 'grid';
             
-            // 3. 重置抽獎框狀態
             document.getElementById('drawResult').style.display = 'none';
             document.getElementById('drawLoading').style.display = 'none';
             document.getElementById('drawInitial').style.display = 'block';
             
-            // 4. 重新初始化畫面
             init();
-            
-            // 滾動回頂部
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 離線版紙屑特效 (簡易 Canvas 實作)
         function launchConfetti() {
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
