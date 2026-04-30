@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隨機抽選系統</title>
+    <style>
+        :root { --primary: #4f46e5; --bg: #f8fafc; --card-bg: #ffffff; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg); margin: 0; padding: 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; text-align: center; }
+        .draw-box { background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 2rem; padding: 3rem; color: white; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .btn-draw { background: white; color: var(--primary); border: none; padding: 1rem 2.5rem; font-size: 1.5rem; font-weight: bold; border-radius: 1rem; cursor: pointer; transition: 0.2s; }
+        .btn-draw:hover { transform: scale(1.05); }
+        .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .history-box { background: white; border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; text-align: left; }
+        .result-topic { font-size: 1.8rem; font-weight: bold; margin-top: 1rem; white-space: pre-wrap; text-align: left; background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 1rem; }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading-screen">
+        <div class="spinner"></div>
+        <p style="margin-top: 1rem; font-weight: bold; color: #475569;">正在從 Google Sheets 同步資料...</p>
+    </div>
+
+    <div class="container" id="mainUI" style="display:none;">
+        <h1>🏆 隨機抽選系統</h1>
+        <div class="draw-box">
+            <h2 id="nextTableLabel" style="font-size: 2rem; margin-bottom: 1.5rem;">準備抽選 A 桌題目</h2>
+            <div id="actionArea">
+                <button class="btn-draw" onclick="handleDraw()">🎯 開始抽選</button>
+            </div>
+            <div id="resultDisplay" style="display:none;">
+                <div class="result-topic" id="currentResult"></div>
+                <button class="btn-draw" style="margin-top:2rem; background: rgba(255,255,255,0.2); color:white; font-size: 1rem;" onclick="prepareNext()">🚀 準備下一位</button>
+            </div>
+        </div>
+
+        <div class="history-box">
+            <h3 style="margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">📝 已確認分配紀錄</h3>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 請將下方的連結替換為您 Google Sheets 的 CSV 連結
+        const SHEET_CSV_URL = "https://drive.google.com/file/d/1DXn2NrtyJyDDzHICy5Z6OzlM6w-oXABt/view?usp=drive_link"; 
+
+        const TABLE_LABELS = ["A", "B", "C", "D", "E"];
+        let pool = [];
+        let history = [];
+
+        async function fetchData() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                const data = await response.text();
+                // 處理 CSV
+                pool = data.split(/\r?\n/).map(row => row.replace(/^"|"$/g, '').trim()).filter(row => row.length > 0);
+                
+                if (pool.length === 0) throw new Error("無效的資料");
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainUI').style.display = 'block';
+                updateStatus();
+            } catch (err) {
+                document.getElementById('loading').innerHTML = `<p style="color:red; font-weight:bold;">同步失敗！請確認試算表已「發佈到網路」為 CSV 格式。</p>`;
+            }
+        }
+
+        function handleDraw() {
+            if (pool.length === 0) return;
+            const idx = Math.floor(Math.random() * pool.length);
+            const selected = pool.splice(idx, 1)[0];
+            const table = TABLE_LABELS[history.length];
+            
+            history.push({ table, topic: selected });
+            
+            document.getElementById('actionArea').style.display = 'none';
+            document.getElementById('resultDisplay').style.display = 'block';
+            document.getElementById('currentResult').innerText = `【${table} 桌 揭曉】\n\n${selected}`;
+            
+            renderHistory();
+        }
+
+        function prepareNext() {
+            if (history.length >= TABLE_LABELS.length) {
+                alert("所有桌次已全部分配完畢！");
+                return;
+            }
+            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('actionArea').style.display = 'block';
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const next = TABLE_LABELS[history.length] || "結束";
+            document.getElementById('nextTableLabel').innerText = `準備抽選 ${next} 桌題目`;
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = history.map(h => `
+                <div style="padding: 1rem; border-bottom: 1px solid #f1f5f9; display: flex; gap: 1rem;">
+                    <span style="background: #4f46e5; color: white; padding: 2px 8px; border-radius: 5px; font-weight: bold;">${h.table}</span>
+                    <span style="font-weight: 600; white-space: pre-wrap;">${h.topic}</span>
+                </div>
+            `).join('');
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
