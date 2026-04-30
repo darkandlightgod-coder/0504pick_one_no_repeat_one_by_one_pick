@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現場隨機抽選系統</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --accent: #f59e0b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.5; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
+        
+        header { text-align: center; margin-bottom: 2.5rem; }
+        h1 { font-size: 2.5rem; font-weight: 900; margin-bottom: 0.5rem; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .badge { display: inline-block; padding: 0.25rem 1rem; background: #fef3c7; color: #92400e; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; margin-top: 0.5rem; }
+
+        .layout { display: grid; grid-template-columns: 1fr 2.5fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
+
+        .sidebar { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: fit-content; }
+        .sidebar h2 { font-size: 1.125rem; margin-bottom: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .item-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .item-card { padding: 0.75rem; background: #f1f5f9; border-radius: 0.75rem; font-size: 0.875rem; border: 1px solid #e2e8f0; color: #475569; }
+
+        .main-content { display: flex; flex-direction: column; gap: 1.5rem; }
+        .draw-box { 
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 2rem; padding: 3rem; text-align: center; color: white;
+            min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            position: relative; overflow: hidden;
+        }
+
+        .table-hint { font-size: 2.5rem; font-weight: 900; margin-bottom: 2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .btn-draw { 
+            background: white; color: var(--primary); border: none; padding: 1rem 2.5rem;
+            font-size: 1.5rem; font-weight: 800; border-radius: 1rem; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        .btn-draw:hover { transform: scale(1.05); background: #f8fafc; }
+        .btn-draw:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .result-reveal { animation: zoomIn 0.5s ease-out; width: 100%; }
+        .result-topic { font-size: 1.7rem; font-weight: 900; background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; line-height: 1.4; text-align: left; }
+        .btn-next { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; margin-top: 2rem; font-weight: 700; cursor: pointer; }
+        .btn-next:hover { background: rgba(255,255,255,0.3); }
+
+        .history-box { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; }
+        .history-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem; border-bottom: 1px solid #f1f5f9; gap: 1rem; }
+        .history-item:last-child { border: none; }
+        .hist-table { background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-weight: 900; font-size: 1rem; min-width: 60px; text-align: center; }
+        .hist-content { flex: 1; font-weight: 700; font-size: 1.125rem; color: #334155; white-space: pre-wrap; }
+
+        .final-table { background: white; border-radius: 2rem; padding: 2rem; border: 4px solid var(--primary); margin-top: 2rem; display: none; }
+        .final-table.show { display: block; animation: slideUp 0.8s ease; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+        th { background: #f8fafc; padding: 1rem; text-align: left; font-size: 0.875rem; color: var(--text-muted); border-bottom: 2px solid #e2e8f0; }
+        td { padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
+
+        .no-print { display: block; }
+        @media print { .no-print { display: none !important; } .final-table { border: none; padding: 0; } }
+
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        #canvas { position: fixed; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; z-index: 100; }
+        
+        .loading { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="container">
+        <header class="no-print">
+            <h1>🏆 現場隨機抽選系統</h1>
+            <div class="badge">分配桌次題目 · 公開透明</div>
+        </header>
+
+        <div class="layout no-print" id="gameArea">
+            <div class="sidebar">
+                <h2>📋 待分配題目</h2>
+                <div class="item-list" id="itemList"></div>
+            </div>
+
+            <div class="main-content">
+                <div class="draw-box" id="drawBox">
+                    <div id="drawInitial">
+                        <div class="table-hint">請抽選 <span id="currentTableLabel">A</span> 桌 題目</div>
+                        <button class="btn-draw" onclick="startDraw()">🎯 開始抽選</button>
+                    </div>
+                    <div id="drawLoading" style="display:none;">
+                        <div class="loading"></div>
+                        <p style="font-size: 1.5rem; font-weight: 700; letter-spacing: 2px;">命運轉動中...</p>
+                    </div>
+                    <div id="drawResult" style="display:none;" class="result-reveal">
+                        <p style="font-size: 1.25rem; opacity: 0.8;">🎉 <span id="resTable"></span> 桌 結果揭曉 🎉</p>
+                        <div class="result-topic" id="resName" style="white-space: pre-wrap;"></div>
+                        <button class="btn-next" onclick="prepareNext()">🚀 準備下一桌</button>
+                    </div>
+                </div>
+
+                <div class="history-box">
+                    <h2 style="margin-bottom: 1rem;">📝 即時結果紀錄</h2>
+                    <div id="historyList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="final-table" id="finalResult">
+            <div style="text-align: center;">
+                <h2 style="font-size: 2rem; font-weight: 900;">最終分配總表</h2>
+                <p style="color: #64748b;">所有桌次題目分配完畢</p>
+            </div>
+            <table id="finalTableBody">
+                <thead>
+                    <tr>
+                        <th width="100">桌次</th>
+                        <th>獲配題目內容</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div style="text-align: center; margin-top: 2rem;" class="no-print">
+                <button class="btn-next" style="background: #1e293b; color: white;" onclick="window.print()">列印結果 / 存成 PDF</button>
+                <button class="btn-next" style="background: #f1f5f9; color: #64748b; margin-left: 10px;" onclick="resetAll()">重新開始</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const INITIAL_TOPICS = [
+            "高齡者的門檻-陪伴講師：王敬皓經理\n面對長者的「科技焦慮」與勞動力斷層，如何讓自主巡守/友善農地不再是負擔？",
+            "補貼翻轉為保育榮譽-陪伴講師：林惠珊負責人\n獎勵金領久了會「鈍化」，如何讓農友或社區從「領錢辦事」轉為「自發投入」？",
+            "破解恐懼與防備-陪伴講師：許竹君副組長\n農友對素昧平生的團隊防備心強，特別是普遍存在「土地出現保育類會被劃為保護區」的恐懼，導致不願多談或拒絕參與。除了獎勵金，我們還能透過哪些方式打破隔閡，消除對土地權益受損的焦慮？",
+            "專業調查與成效可視化-陪伴講師：劉建男副教授\n如何降低生態調查的門檻，並將「看不見的監測數據」轉化為「有感的保育成果」，以強化農友與跨單位的認同感？",
+            "制度落實與責任邊界-陪伴講師：林育秀副研究員\n當剛性的行政制度（預算、課時）遇上複雜的在地現實（滋擾、情緒），如何建立穩定的信任機制並釐清權責？"
+        ];
+        const TABLE_LABELS = ["A", "B", "C", "D", "E"];
+
+        let pool = [...INITIAL_TOPICS];
+        let history = [];
+
+        function init() {
+            renderSidebar();
+            renderHistory();
+            document.getElementById('currentTableLabel').innerText = TABLE_LABELS[history.length] || "-";
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('itemList');
+            list.innerHTML = pool.map(t => `<div class="item-card">${t.split('\n')[0]}</div>`).join('');
+        }
+
+        function startDraw() {
+            if (pool.length === 0) return;
+            
+            document.getElementById('drawInitial').style.display = 'none';
+            document.getElementById('drawLoading').style.display = 'block';
+
+            setTimeout(() => {
+                const idx = Math.floor(Math.random() * pool.length);
+                const selected = pool.splice(idx, 1)[0];
+                const table = TABLE_LABELS[history.length];
+                
+                history.push({ table, topic: selected });
+                
+                document.getElementById('drawLoading').style.display = 'none';
+                document.getElementById('drawResult').style.display = 'block';
+                document.getElementById('resTable').innerText = table;
+                document.getElementById('resName').innerText = selected;
+                
+                renderSidebar();
+                renderHistory();
+                launchConfetti();
+            }, 1500);
+        }
+
+        function prepareNext() {
+            if (pool.length === 0) {
+                showFinal();
+                return;
+            }
+            document.getElementById('drawResult').style.display = 'none';
+            document.getElementById('drawInitial').style.display = 'block';
+            document.getElementById('currentTableLabel').innerText = TABLE_LABELS[history.length];
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            if (history.length === 0) {
+                list.innerHTML = '<p style="color:#94a3b8; font-style:italic; text-align:center; padding:1rem;">尚無紀錄</p>';
+                return;
+            }
+            list.innerHTML = history.map(h => `
+                <div class="history-item">
+                    <div class="hist-table">${h.table} 桌</div>
+                    <div class="hist-content">${h.topic}</div>
+                </div>
+            `).join('');
+        }
+
+        function showFinal() {
+            document.getElementById('gameArea').style.display = 'none';
+            const final = document.getElementById('finalResult');
+            final.classList.add('show');
+            const tbody = document.querySelector('#finalTableBody tbody');
+            tbody.innerHTML = history.map(h => `
+                <tr>
+                    <td><b style="font-size:1.25rem">${h.table} 桌</b></td>
+                    <td style="font-weight: 700; white-space: pre-wrap;">${h.topic}</td>
+                </tr>
+            `).join('');
+        }
+
+        function resetAll() {
+            if(!confirm("確定要重置並重新開始嗎？所有的開獎紀錄將會被清空。")) return;
+            
+            // 數據重置
+            pool = [...INITIAL_TOPICS];
+            history = [];
+
+            // UI 重置
+            document.getElementById('finalResult').classList.remove('show');
+            document.getElementById('gameArea').style.display = 'grid';
+            document.getElementById('drawResult').style.display = 'none';
+            document.getElementById('drawLoading').style.display = 'none';
+            document.getElementById('drawInitial').style.display = 'block';
+            
+            init();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function launchConfetti() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            let particles = [];
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height * 0.6,
+                    vx: (Math.random() - 0.5) * 20,
+                    vy: (Math.random() - 0.7) * 25,
+                    size: Math.random() * 8 + 4,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    rotation: Math.random() * 360,
+                    rSpeed: Math.random() * 10 - 5
+                });
+            }
+            function update() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, i) => {
+                    p.x += p.vx; p.y += p.vy;
+                    p.vy += 0.5; p.rotation += p.rSpeed;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    ctx.restore();
+                    if (p.y > canvas.height) particles.splice(i, 1);
+                });
+                if (particles.length > 0) requestAnimationFrame(update);
+            }
+            update();
+        }
+        init();
+    </script>
+</body>
+</html>
