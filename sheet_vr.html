@@ -2,74 +2,95 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AETERNA 現場抽選系統 (Sheets)</title>
-    <!-- 樣式與離線版相同 -->
+    <title>Google Sheets 資料抓取測試</title>
     <style>
-        :root { --primary: #4f46e5; --bg: #f8fafc; --card-bg: #ffffff; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 2rem; }
-        .container { max-width: 1000px; margin: 0 auto; text-align: center; }
-        .box { background: white; padding: 2rem; border-radius: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
-        .draw-btn { background: var(--primary); color: white; padding: 1rem 2rem; border: none; border-radius: 1rem; font-size: 1.5rem; cursor: pointer; }
-        .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        /* 沿用前述樣式... */
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; background: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: monospace; }
+        button { background: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #4338ca; }
+        #log { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; margin-top: 20px; font-family: monospace; white-space: pre-wrap; height: 200px; overflow-y: auto; }
+        #data-view { margin-top: 20px; border: 1px solid #ddd; padding: 15px; background: #fff; display: none; }
+        .status-ok { color: green; font-weight: bold; }
+        .status-err { color: red; font-weight: bold; }
     </style>
 </head>
-<body x-data="sheetsApp()" x-init="fetchData()">
-    <div id="loading" class="loading-screen">正在從 Google Sheets 獲取題目...</div>
+<body>
 
-    <div class="container" id="mainUI" style="display:none;">
-        <h1>🏆 AETERNA 抽選 (雲端同步版)</h1>
-        <div class="box">
-            <h2 id="nextTable">準備抽選 A 桌題目</h2>
-            <button class="draw-btn" onclick="app.draw()">開始抽選</button>
-            <div id="resultArea" style="margin-top:2rem; font-size: 1.5rem; font-weight: bold; color: #ef4444;"></div>
-        </div>
-        <div id="history" style="text-align: left;"></div>
+<div class="card">
+    <h2>🔗 Google Sheets 連線測試器</h2>
+    <p>請確認您的試算表已執行：<b>檔案 > 共用 > 發佈到網路 > 選擇 CSV 格式 > 點擊發佈</b></p>
+    
+    <label>請貼上發佈後的 CSV 網址：</label>
+    <input type="text" id="csv-url" placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv">
+    
+    <button onclick="testConnection()">立即測試連線</button>
+
+    <div id="log">等待操作...</div>
+
+    <div id="data-view">
+        <h3 class="status-ok">✅ 成功抓取到資料！</h3>
+        <p>以下是抓取到的題目清單（前 5 筆）：</p>
+        <ul id="item-list"></ul>
+        <hr>
+        <p><b>原始 CSV 內容：</b></p>
+        <div id="raw-content" style="font-size: 12px; color: #666;"></div>
     </div>
+</div>
 
-    <script>
-        // 【設定處】請將下方的 URL 替換為您的 Google Sheets CSV 發佈連結
-        const SHEET_CSV_URL = "YOUR_CSV_URL_HERE"; 
-        
-        let pool = [];
-        let history = [];
-        const TABLE_LABELS = ["A", "B", "C", "D", "E"];
+<script>
+    // 預填您目前的試算表 ID 轉換後的發佈連結 (這只是預測，最準確的是從發佈到網路複製)
+    const DEFAULT_ID = "1zeMW7x9cRj-YXlsZ_Ms4M-dTU1wUYsdfRw14SybPmyI";
+    document.getElementById('csv-url').value = `https://docs.google.com/spreadsheets/d/${DEFAULT_ID}/pub?output=csv`;
 
-        async function fetchData() {
-            try {
-                const response = await fetch(SHEET_CSV_URL);
-                const data = await response.text();
-                // 簡單解析 CSV (假設每行是一個題目，A1~A5)
-                pool = data.split('\n').map(row => row.replace(/"/g, '').trim()).filter(row => row.length > 0);
-                
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('mainUI').style.display = 'block';
-                updateUI();
-            } catch (error) {
-                alert("抓取資料失敗，請檢查 URL 是否正確並已發佈到網路。");
-            }
+    async function testConnection() {
+        const url = document.getElementById('csv-url').value.trim();
+        const log = document.getElementById('log');
+        const dataView = document.getElementById('data-view');
+        const itemList = document.getElementById('item-list');
+        const rawContent = document.getElementById('raw-content');
+
+        log.innerHTML = `[${new Date().toLocaleTimeString()}] 開始連線測試...\n`;
+        dataView.style.display = 'none';
+
+        if (!url.includes('output=csv')) {
+            log.innerHTML += `<span class="status-err">[錯誤] 網址似乎不是 CSV 格式。請確認網址結尾包含 output=csv</span>\n`;
         }
 
-        const app = {
-            draw() {
-                if (pool.length === 0) return;
-                const idx = Math.floor(Math.random() * pool.length);
-                const selected = pool.splice(idx, 1)[0];
-                const table = TABLE_LABELS[history.length];
-                history.push({ table, selected });
-                
-                document.getElementById('resultArea').innerText = `🎉 ${table} 桌：${selected}`;
-                updateUI();
+        try {
+            log.innerHTML += `[連線中] 正在請求資料於: ${url}\n`;
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`伺服器回傳錯誤代碼: ${response.status}`);
             }
-        };
 
-        function updateUI() {
-            document.getElementById('nextTable').innerText = history.length < TABLE_LABELS.length 
-                ? `準備抽選 ${TABLE_LABELS[history.length]} 桌題目` 
-                : "全部抽取完畢";
-            document.getElementById('history').innerHTML = history.map(h => `<div><b>${h.table} 桌</b>: ${h.selected}</div>`).join('');
+            const data = await response.text();
+            log.innerHTML += `<span class="status-ok">[成功] 伺服器回應正常。資料大小: ${data.length} bytes</span>\n`;
+            
+            // 解析資料 (依行拆分)
+            const rows = data.split(/\r?\n/).map(row => row.replace(/"/g, '').trim()).filter(row => row.length > 5);
+            
+            if (rows.length === 0) {
+                log.innerHTML += `<span class="status-err">[警告] 資料抓取成功，但內容是空的！請檢查試算表內是否有文字。</span>\n`;
+                return;
+            }
+
+            // 顯示結果
+            dataView.style.display = 'block';
+            itemList.innerHTML = rows.slice(0, 5).map(r => `<li>${r}</li>`).join('');
+            rawContent.innerText = data;
+
+            log.innerHTML += `[完成] 已成功辨識出 ${rows.length} 個題目。\n`;
+
+        } catch (error) {
+            log.innerHTML += `<span class="status-err">[失敗] 無法抓取資料。</span>\n`;
+            log.innerHTML += `原因: ${error.message}\n\n`;
+            log.innerHTML += `建議：\n1. 檢查網路連線。\n2. 確認試算表權限是否設為「知道連結的人均可查看」。\n3. 確認是否已點擊「發佈到網路」。`;
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
