@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>隨機抽選系統</title>
+    <title>隨機抽選系統 (雲端同步)</title>
     <style>
         :root { --primary: #4f46e5; --bg: #f8fafc; --card-bg: #ffffff; }
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg); margin: 0; padding: 2rem; }
@@ -25,7 +25,7 @@
     </div>
 
     <div class="container" id="mainUI" style="display:none;">
-        <h1>🏆 隨機抽選系統</h1>
+        <h1>🏆 隨機抽選系統 (雲端同步版)</h1>
         <div class="draw-box">
             <h2 id="nextTableLabel" style="font-size: 2rem; margin-bottom: 1.5rem;">準備抽選 A 桌題目</h2>
             <div id="actionArea">
@@ -46,6 +46,72 @@
     <script>
         // 請將下方的連結替換為您 Google Sheets 的 CSV 連結
         const SHEET_CSV_URL = "https://drive.google.com/file/d/1DXn2NrtyJyDDzHICy5Z6OzlM6w-oXABt/view?usp=drive_link"; 
+
+        const TABLE_LABELS = ["A", "B", "C", "D", "E"];
+        let pool = [];
+        let history = [];
+
+        async function fetchData() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                const data = await response.text();
+                // 處理 CSV
+                pool = data.split(/\r?\n/).map(row => row.replace(/^"|"$/g, '').trim()).filter(row => row.length > 0);
+                
+                if (pool.length === 0) throw new Error("無效的資料");
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainUI').style.display = 'block';
+                updateStatus();
+            } catch (err) {
+                document.getElementById('loading').innerHTML = `<p style="color:red; font-weight:bold;">同步失敗！請確認試算表已「發佈到網路」為 CSV 格式。</p>`;
+            }
+        }
+
+        function handleDraw() {
+            if (pool.length === 0) return;
+            const idx = Math.floor(Math.random() * pool.length);
+            const selected = pool.splice(idx, 1)[0];
+            const table = TABLE_LABELS[history.length];
+            
+            history.push({ table, topic: selected });
+            
+            document.getElementById('actionArea').style.display = 'none';
+            document.getElementById('resultDisplay').style.display = 'block';
+            document.getElementById('currentResult').innerText = `【${table} 桌 揭曉】\n\n${selected}`;
+            
+            renderHistory();
+        }
+
+        function prepareNext() {
+            if (history.length >= TABLE_LABELS.length) {
+                alert("所有桌次已全部分配完畢！");
+                return;
+            }
+            document.getElementById('resultDisplay').style.display = 'none';
+            document.getElementById('actionArea').style.display = 'block';
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const next = TABLE_LABELS[history.length] || "結束";
+            document.getElementById('nextTableLabel').innerText = `準備抽選 ${next} 桌題目`;
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = history.map(h => `
+                <div style="padding: 1rem; border-bottom: 1px solid #f1f5f9; display: flex; gap: 1rem;">
+                    <span style="background: #4f46e5; color: white; padding: 2px 8px; border-radius: 5px; font-weight: bold;">${h.table}</span>
+                    <span style="font-weight: 600; white-space: pre-wrap;">${h.topic}</span>
+                </div>
+            `).join('');
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
 
         const TABLE_LABELS = ["A", "B", "C", "D", "E"];
         let pool = [];
