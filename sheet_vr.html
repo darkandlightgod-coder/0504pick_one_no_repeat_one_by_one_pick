@@ -2,95 +2,318 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>Google Sheets 資料抓取測試</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現場隨機抽選系統</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; background: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: monospace; }
-        button { background: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #4338ca; }
-        #log { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; margin-top: 20px; font-family: monospace; white-space: pre-wrap; height: 200px; overflow-y: auto; }
-        #data-view { margin-top: 20px; border: 1px solid #ddd; padding: 15px; background: #fff; display: none; }
-        .status-ok { color: green; font-weight: bold; }
-        .status-err { color: red; font-weight: bold; }
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --accent: #f59e0b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.5; overflow-x: hidden; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
+        
+        header { text-align: center; margin-bottom: 2.5rem; }
+        h1 { font-size: 2.5rem; font-weight: 900; margin-bottom: 0.5rem; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .badge { display: inline-block; padding: 0.25rem 1rem; background: #fef3c7; color: #92400e; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; margin-top: 0.5rem; }
+
+        .layout { display: grid; grid-template-columns: 1fr 2.5fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
+
+        .sidebar { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: fit-content; }
+        .sidebar h2 { font-size: 1.125rem; margin-bottom: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .item-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .item-card { padding: 0.75rem; background: #f1f5f9; border-radius: 0.75rem; font-size: 0.875rem; border: 1px solid #e2e8f0; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .main-content { display: flex; flex-direction: column; gap: 1.5rem; }
+        .draw-box { 
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 2rem; padding: 3rem; text-align: center; color: white;
+            min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            position: relative; overflow: hidden;
+        }
+
+        .table-hint { font-size: 2.5rem; font-weight: 900; margin-bottom: 2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .btn-draw { 
+            background: white; color: var(--primary); border: none; padding: 1rem 2.5rem;
+            font-size: 1.5rem; font-weight: 800; border-radius: 1rem; cursor: pointer;
+            transition: all 0.2s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        .btn-draw:hover { transform: scale(1.05); background: #f8fafc; }
+        .btn-draw:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .result-reveal { animation: zoomIn 0.5s ease-out; width: 100%; }
+        .result-topic { font-size: 1.7rem; font-weight: 900; background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; line-height: 1.4; text-align: left; }
+        .btn-next { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; margin-top: 2rem; font-weight: 700; cursor: pointer; }
+        .btn-next:hover { background: rgba(255,255,255,0.3); }
+
+        .history-box { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; }
+        .history-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem; border-bottom: 1px solid #f1f5f9; gap: 1rem; }
+        .history-item:last-child { border: none; }
+        .hist-table { background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-weight: 900; font-size: 1rem; min-width: 60px; text-align: center; }
+        .hist-content { flex: 1; font-weight: 700; font-size: 1.125rem; color: #334155; white-space: pre-wrap; }
+
+        .final-table { background: white; border-radius: 2rem; padding: 2rem; border: 4px solid var(--primary); margin-top: 2rem; display: none; }
+        .final-table.show { display: block; animation: slideUp 0.8s ease; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+        th { background: #f8fafc; padding: 1rem; text-align: left; font-size: 0.875rem; color: var(--text-muted); border-bottom: 2px solid #e2e8f0; }
+        td { padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
+
+        .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .no-print { display: block; }
+        @media print { .no-print { display: none !important; } .final-table { border: none; padding: 0; } body { background: white; } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        #confetti-canvas { position: fixed; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; z-index: 100; }
     </style>
 </head>
 <body>
-
-<div class="card">
-    <h2>🔗 Google Sheets 連線測試器</h2>
-    <p>請確認您的試算表已執行：<b>檔案 > 共用 > 發佈到網路 > 選擇 CSV 格式 > 點擊發佈</b></p>
-    
-    <label>請貼上發佈後的 CSV 網址：</label>
-    <input type="text" id="csv-url" placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv">
-    
-    <button onclick="testConnection()">立即測試連線</button>
-
-    <div id="log">等待操作...</div>
-
-    <div id="data-view">
-        <h3 class="status-ok">✅ 成功抓取到資料！</h3>
-        <p>以下是抓取到的題目清單（前 5 筆）：</p>
-        <ul id="item-list"></ul>
-        <hr>
-        <p><b>原始 CSV 內容：</b></p>
-        <div id="raw-content" style="font-size: 12px; color: #666;"></div>
+    <div id="loading" class="loading-screen">
+        <div class="spinner"></div>
+        <p style="font-weight: bold; color: #475569;">正在從雲端同步題目...</p>
     </div>
-</div>
 
-<script>
-    // 預填您目前的試算表 ID 轉換後的發佈連結 (這只是預測，最準確的是從發佈到網路複製)
-    const DEFAULT_ID = "1zeMW7x9cRj-YXlsZ_Ms4M-dTU1wUYsdfRw14SybPmyI";
-    document.getElementById('csv-url').value = `https://docs.google.com/spreadsheets/d/${DEFAULT_ID}/pub?output=csv`;
+    <canvas id="confetti-canvas"></canvas>
+    <div class="container" id="mainUI" style="display:none;">
+        <header class="no-print">
+            <h1>🏆 現場隨機抽選系統</h1>
+            <div class="badge">雲端同步 · 公開透明</div>
+        </header>
 
-    async function testConnection() {
-        const url = document.getElementById('csv-url').value.trim();
-        const log = document.getElementById('log');
-        const dataView = document.getElementById('data-view');
-        const itemList = document.getElementById('item-list');
-        const rawContent = document.getElementById('raw-content');
+        <div class="layout no-print" id="gameArea">
+            <div class="sidebar">
+                <h2>📋 待分配題目</h2>
+                <div id="itemList" class="item-list"></div>
+            </div>
 
-        log.innerHTML = `[${new Date().toLocaleTimeString()}] 開始連線測試...\n`;
-        dataView.style.display = 'none';
+            <div class="main-content">
+                <div class="draw-box" id="drawBox">
+                    <div id="drawInitial">
+                        <div class="table-hint">請抽選 <span id="currentTableLabel">A</span> 桌 題目</div>
+                        <button class="btn-draw" onclick="startDraw()">🎯 開始抽選</button>
+                    </div>
+                    <div id="drawLoading" style="display:none;">
+                        <div class="spinner" style="margin: 0 auto 1.5rem; border-top-color: white;"></div>
+                        <p style="font-size: 1.5rem; font-weight: 700; letter-spacing: 2px;">命運轉動中...</p>
+                    </div>
+                    <div id="drawResult" style="display:none;" class="result-reveal">
+                        <p style="font-size: 1.25rem; opacity: 0.8;">🎉 <span id="resTable"></span> 桌 結果揭曉 🎉</p>
+                        <div class="result-topic" id="resName" style="white-space: pre-wrap;"></div>
+                        <button class="btn-next" onclick="prepareNext()">🚀 準備下一桌</button>
+                    </div>
+                </div>
 
-        if (!url.includes('output=csv')) {
-            log.innerHTML += `<span class="status-err">[錯誤] 網址似乎不是 CSV 格式。請確認網址結尾包含 output=csv</span>\n`;
-        }
+                <div class="history-box">
+                    <h2 style="margin-bottom: 1rem;">📝 即時結果紀錄</h2>
+                    <div id="historyList"></div>
+                </div>
+            </div>
+        </div>
 
-        try {
-            log.innerHTML += `[連線中] 正在請求資料於: ${url}\n`;
-            
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                throw new Error(`伺服器回傳錯誤代碼: ${response.status}`);
+        <div class="final-table" id="finalResult">
+            <div style="text-align: center;">
+                <h2 style="font-size: 2rem; font-weight: 900;">最終分配總表</h2>
+                <p style="color: #64748b;">所有桌次題目分配完畢</p>
+            </div>
+            <table id="finalTableBody">
+                <thead>
+                    <tr>
+                        <th width="100">桌次</th>
+                        <th>獲配題目內容</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div style="text-align: center; margin-top: 2rem;" class="no-print">
+                <button class="btn-draw" style="background: #1e293b; color: white; font-size: 1.1rem; padding: 0.8rem 2rem;" onclick="window.print()">列印結果 / 存成 PDF</button>
+                <button class="btn-draw" style="background: #f1f5f9; color: #64748b; margin-left: 10px; font-size: 1.1rem; padding: 0.8rem 2rem;" onclick="resetAll()">重新開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引用紙屑特效庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        // 設定 CSV 發佈網址
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vStKJN9IwSsFTofA0SYwjT0_Y9ae80CbEHHVvm41j1gsHuV6ishpSKn5m4IBi856Yi2eIglwX_QybxS/pub?output=csv";
+        
+        let initialPool = [];
+        let pool = [];
+        let history = [];
+        const TABLE_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+
+        // 強化版 CSV 解析器 (處理換行與雙引號)
+        function parseCSV(text) {
+            const rows = [];
+            let currentCell = '';
+            let inQuotes = false;
+            let currentRow = [];
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"' && inQuotes && nextChar === '"') {
+                    currentCell += '"';
+                    i++;
+                } else if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    currentRow.push(currentCell.trim());
+                    currentCell = '';
+                } else if ((char === '\r' || char === '\n') && !inQuotes) {
+                    if (currentCell !== '' || currentRow.length > 0) {
+                        currentRow.push(currentCell.trim());
+                        rows.push(currentRow);
+                        currentCell = '';
+                        currentRow = [];
+                    }
+                    if (char === '\r' && nextChar === '\n') i++;
+                } else {
+                    currentCell += char;
+                }
+            }
+            if (currentCell !== '' || currentRow.length > 0) {
+                currentRow.push(currentCell.trim());
+                rows.push(currentRow);
             }
 
-            const data = await response.text();
-            log.innerHTML += `<span class="status-ok">[成功] 伺服器回應正常。資料大小: ${data.length} bytes</span>\n`;
-            
-            // 解析資料 (依行拆分)
-            const rows = data.split(/\r?\n/).map(row => row.replace(/"/g, '').trim()).filter(row => row.length > 5);
-            
-            if (rows.length === 0) {
-                log.innerHTML += `<span class="status-err">[警告] 資料抓取成功，但內容是空的！請檢查試算表內是否有文字。</span>\n`;
+            // 智慧過濾：只取第一欄有內容的題目，且過濾掉標題與無效短字串
+            return rows.map(r => r[0]).filter(content => {
+                if (!content || content.toLowerCase() === 'null') return false;
+                if (content.length < 5) return false;
+                if (content === "題目" || content === "Topic") return false;
+                return true;
+            });
+        }
+
+        async function fetchSheetData() {
+            try {
+                // 加上時間戳防止快取
+                const response = await fetch(SHEET_CSV_URL + "&t=" + Date.now());
+                if (!response.ok) throw new Error("網路請求失敗");
+                const text = await response.text();
+                
+                initialPool = parseCSV(text);
+                pool = [...initialPool];
+                
+                if (pool.length === 0) throw new Error("讀取不到任何題目");
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('mainUI').style.display = 'block';
+                initUI();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').innerHTML = `
+                    <div style="text-align:center; padding:20px; background:white; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+                        <p style="color:red; font-weight:bold; font-size:1.2rem;">⚠️ 無法抓取雲端資料</p>
+                        <p style="color:#64748b; margin:10px 0;">請確認試算表已設為「發佈到網路」並選擇 CSV 格式。</p>
+                        <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; background:#4f46e5; color:white; border:none; border-radius:8px; cursor:pointer;">重試連線</button>
+                    </div>
+                `;
+            }
+        }
+
+        function initUI() {
+            renderSidebar();
+            renderHistory();
+            const nextLabel = TABLE_LABELS[history.length];
+            document.getElementById('currentTableLabel').innerText = nextLabel || "-";
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('itemList');
+            list.innerHTML = pool.map(t => `
+                <div class="item-card">${t.split('\n')[0]}</div>
+            `).join('');
+        }
+
+        function startDraw() {
+            if (pool.length === 0) return;
+            document.getElementById('drawInitial').style.display = 'none';
+            document.getElementById('drawLoading').style.display = 'block';
+
+            setTimeout(() => {
+                const idx = Math.floor(Math.random() * pool.length);
+                const selected = pool.splice(idx, 1)[0];
+                const table = TABLE_LABELS[history.length];
+                
+                history.push({ table, topic: selected });
+                
+                document.getElementById('drawLoading').style.display = 'none';
+                document.getElementById('drawResult').style.display = 'block';
+                document.getElementById('resTable').innerText = table;
+                document.getElementById('resName').innerText = selected;
+                
+                renderSidebar();
+                renderHistory();
+                
+                // 噴發慶祝紙屑
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#4f46e5', '#7c3aed', '#fbbf24']
+                });
+            }, 1500);
+        }
+
+        function prepareNext() {
+            if (pool.length === 0) {
+                showFinal();
                 return;
             }
-
-            // 顯示結果
-            dataView.style.display = 'block';
-            itemList.innerHTML = rows.slice(0, 5).map(r => `<li>${r}</li>`).join('');
-            rawContent.innerText = data;
-
-            log.innerHTML += `[完成] 已成功辨識出 ${rows.length} 個題目。\n`;
-
-        } catch (error) {
-            log.innerHTML += `<span class="status-err">[失敗] 無法抓取資料。</span>\n`;
-            log.innerHTML += `原因: ${error.message}\n\n`;
-            log.innerHTML += `建議：\n1. 檢查網路連線。\n2. 確認試算表權限是否設為「知道連結的人均可查看」。\n3. 確認是否已點擊「發佈到網路」。`;
+            document.getElementById('drawResult').style.display = 'none';
+            document.getElementById('drawInitial').style.display = 'block';
+            initUI();
         }
-    }
-</script>
 
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            if (history.length === 0) {
+                list.innerHTML = '<p style="color:#94a3b8; font-style:italic; text-align:center; padding:1rem;">尚無紀錄</p>';
+                return;
+            }
+            list.innerHTML = history.map(h => `
+                <div class="history-item">
+                    <div class="hist-table">${h.table} 桌</div>
+                    <div class="hist-content">${h.topic}</div>
+                </div>
+            `).join('');
+        }
+
+        function showFinal() {
+            document.getElementById('gameArea').style.display = 'none';
+            const final = document.getElementById('finalResult');
+            final.classList.add('show');
+            const tbody = document.querySelector('#finalTableBody tbody');
+            tbody.innerHTML = history.map(h => `
+                <tr>
+                    <td><span style="display:inline-block; padding:5px 12px; background:#4f46e5; color:white; border-radius:8px; font-weight:bold;">${h.table} 桌</span></td>
+                    <td style="font-weight: bold; font-size:1.1rem; white-space: pre-wrap; color:#1e293b;">${h.topic}</td>
+                </tr>
+            `).join('');
+        }
+
+        function resetAll() {
+            if(!confirm("確定要重置並重新開始嗎？開獎紀錄將會被清空。")) return;
+            // 重新載入網頁以獲取最新雲端資料並重置狀態
+            location.reload();
+        }
+
+        // 初始化抓取資料
+        fetchSheetData();
+    </script>
 </body>
 </html>
