@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現場抽選系統</title>
+    <title>現場隨機抽選系統</title>
     <style>
         :root {
             --primary: #4f46e5;
@@ -35,7 +35,7 @@
         .draw-box { 
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             border-radius: 2rem; padding: 3rem; text-align: center; color: white;
-            min-height: 380px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
             position: relative; overflow: hidden;
         }
@@ -49,8 +49,8 @@
         .btn-draw:hover { transform: scale(1.05); background: #f8fafc; }
         .btn-draw:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .result-reveal { animation: zoomIn 0.5s ease-out; }
-        .result-topic { font-size: 2rem; font-weight: 900; background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; line-height: 1.3; }
+        .result-reveal { animation: zoomIn 0.5s ease-out; width: 100%; }
+        .result-topic { font-size: 1.7rem; font-weight: 900; background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; line-height: 1.4; text-align: left; }
         .btn-next { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; margin-top: 2rem; font-weight: 700; cursor: pointer; }
         .btn-next:hover { background: rgba(255,255,255,0.3); }
 
@@ -58,7 +58,7 @@
         .history-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem; border-bottom: 1px solid #f1f5f9; gap: 1rem; }
         .history-item:last-child { border: none; }
         .hist-table { background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-weight: 900; font-size: 1rem; min-width: 60px; text-align: center; }
-        .hist-content { flex: 1; font-weight: 700; font-size: 1.125rem; color: #334155; }
+        .hist-content { flex: 1; font-weight: 700; font-size: 1.125rem; color: #334155; white-space: pre-wrap; }
 
         .final-table { background: white; border-radius: 2rem; padding: 2rem; border: 4px solid var(--primary); margin-top: 2rem; display: none; }
         .final-table.show { display: block; animation: slideUp 0.8s ease; }
@@ -82,7 +82,7 @@
     <canvas id="canvas"></canvas>
     <div class="container">
         <header class="no-print">
-            <h1>🏆 現場抽選系統</h1>
+            <h1>🏆 現場隨機抽選系統</h1>
             <div class="badge">分配桌次題目 · 公開透明</div>
         </header>
 
@@ -104,7 +104,7 @@
                     </div>
                     <div id="drawResult" style="display:none;" class="result-reveal">
                         <p style="font-size: 1.25rem; opacity: 0.8;">🎉 <span id="resTable"></span> 桌 結果揭曉 🎉</p>
-                        <div class="result-topic" id="resName"></div>
+                        <div class="result-topic" id="resName" style="white-space: pre-wrap;"></div>
                         <button class="btn-next" onclick="prepareNext()">🚀 準備下一桌</button>
                     </div>
                 </div>
@@ -118,7 +118,7 @@
 
         <div class="final-table" id="finalResult">
             <div style="text-align: center;">
-                <h2 style="font-size: 2rem; font-weight: 900;">AETERNA 最終分配總表</h2>
+                <h2 style="font-size: 2rem; font-weight: 900;">最終分配總表</h2>
                 <p style="color: #64748b;">所有桌次題目分配完畢</p>
             </div>
             <table id="finalTableBody">
@@ -131,7 +131,7 @@
                 <tbody></tbody>
             </table>
             <div style="text-align: center; margin-top: 2rem;" class="no-print">
-                <button class="btn-next" style="background: #1e293b; color: white;" onclick="window.print()">列印 / 存成 PDF</button>
+                <button class="btn-next" style="background: #1e293b; color: white;" onclick="window.print()">列印結果 / 存成 PDF</button>
                 <button class="btn-next" style="background: #f1f5f9; color: #64748b; margin-left: 10px;" onclick="resetAll()">重新開始</button>
             </div>
         </div>
@@ -225,12 +225,13 @@
         function resetAll() {
             if(!confirm("確定要重置並重新開始嗎？所有的開獎紀錄將會被清空。")) return;
             
+            // 數據重置
             pool = [...INITIAL_TOPICS];
             history = [];
 
+            // UI 重置
             document.getElementById('finalResult').classList.remove('show');
             document.getElementById('gameArea').style.display = 'grid';
-            
             document.getElementById('drawResult').style.display = 'none';
             document.getElementById('drawLoading').style.display = 'none';
             document.getElementById('drawInitial').style.display = 'block';
@@ -274,7 +275,6 @@
             }
             update();
         }
-
         init();
     </script>
 </body>
