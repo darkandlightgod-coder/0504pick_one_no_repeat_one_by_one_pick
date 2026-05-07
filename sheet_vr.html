@@ -68,7 +68,7 @@
 
         .history-box { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; }
         .history-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.8rem; border-bottom: 1px solid #f1f5f9; gap: 1rem; }
-        .hist-tag { background: var(--primary); color: white; padding: 2px 8px; border-radius: 6px; font-weight: 900; font-size: 0.9rem; shrink: 0; }
+        .hist-tag { background: var(--primary); color: white; padding: 2px 10px; border-radius: 6px; font-weight: 900; font-size: 1rem; shrink: 0; }
         .hist-content { flex: 1; font-weight: 700; color: #334155; white-space: pre-wrap; }
 
         /* 最終報表 */
@@ -91,7 +91,7 @@
 <body>
     <div id="loading" class="loading-screen">
         <div class="spinner"></div>
-        <p style="font-weight: bold; color: #475569;">正在從雲端讀取主體與客體資料...</p>
+        <p style="font-weight: bold; color: #475569;">正在從雲端同步主體與客體資料...</p>
     </div>
 
     <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; z-index: 100;"></canvas>
@@ -103,14 +103,14 @@
 
         <div class="layout no-print" id="gameArea">
             <div class="sidebar">
-                <h2 style="font-size:1.1rem; margin-bottom:1rem;">📋 待分配客體內容</h2>
+                <h2 style="font-size:1.1rem; margin-bottom:1rem;">📋 待分配客體 (B欄內容)</h2>
                 <div id="itemList" class="item-list"></div>
             </div>
 
             <div class="main-content">
                 <!-- 選配介面面板 -->
                 <div class="selector-panel" id="selectorPanel">
-                    <div class="selector-label">📍 請選擇本次抽選的主體：</div>
+                    <div class="selector-label">📍 請選擇本次抽選的主體 (A欄)：</div>
                     <select id="targetSelector" class="custom-select" onchange="syncSubjectLabel()">
                         <!-- 動態生成選項 -->
                     </select>
@@ -130,7 +130,7 @@
                     <div id="drawResult" style="display:none; width: 100%; animation: zoomIn 0.3s;">
                         <p style="font-size: 1.25rem; opacity: 0.8;">🎉 <span id="resSubject" class="highlight"></span> 結果揭曉 🎉</p>
                         <div class="result-topic" id="resName" style="white-space: pre-wrap;"></div>
-                        <button class="btn-draw" style="margin-top: 2rem; font-size: 1.1rem; background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4);" onclick="prepareNext()">🚀 準備下一位</button>
+                        <button class="btn-draw" style="margin-top: 2.5rem; font-size: 1.1rem; background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4);" onclick="prepareNext()">🚀 準備下一位</button>
                     </div>
                 </div>
 
@@ -148,8 +148,8 @@
             <table id="finalTableBody">
                 <thead>
                     <tr>
-                        <th width="200">主體 (組別/對象)</th>
-                        <th>獲配客體 (題目/內容)</th>
+                        <th width="200">主體 (A 欄名稱)</th>
+                        <th>獲配客體 (B 欄內容)</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -166,13 +166,13 @@
         // 目標 CSV 網址
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vStKJN9IwSsFTofA0SYwjT0_Y9ae80CbEHHVvm41j1gsHuV6ishpSKn5m4IBi856Yi2eIglwX_QybxS/pub?output=csv";
         
-        let initialSubjects = []; // 雲端抓取的所有主體 (A欄)
-        let initialObjects = [];  // 雲端抓取的所有客體 (B欄)
+        let initialSubjects = []; 
+        let initialObjects = [];  
         let remainingSubjects = []; 
         let remainingObjects = []; 
         let history = [];
 
-        // 健全的 CSV 解析器：處理雙欄位、雙引號與換行
+        // 核心修正：字元級 CSV 解析引擎，確保 A, B 欄位精準分離
         function parseCSV(text) {
             const rows = [];
             let currentLine = [];
@@ -196,7 +196,7 @@
                 } else if ((char === '\n' || char === '\r') && !inQuotes) {
                     if (char === '\r' && nextChar === '\n') i++;
                     currentLine.push(currentCell.trim());
-                    if (currentLine.join('').length > 0) rows.push(currentLine);
+                    if (currentLine.length > 0) rows.push(currentLine);
                     currentLine = [];
                     currentCell = '';
                 } else {
@@ -208,16 +208,19 @@
                 rows.push(currentLine);
             }
 
-            // 過濾並拆分欄位
             const subjects = [];
             const objects = [];
 
             rows.forEach((row, index) => {
+                // 自動跳過標題列
+                if (index === 0) {
+                    const firstCell = row[0] ? row[0].toLowerCase() : '';
+                    if (firstCell.includes('組') || firstCell.includes('名稱') || firstCell.includes('subject')) return;
+                }
+
+                // A 欄為「主體」，B 欄為「客體」
                 const sub = row[0];
                 const obj = row[1];
-                
-                // 智慧過濾：排除標題列 (檢查是否包含關鍵字或長度)
-                if (index === 0 && (sub.includes("組") || sub.includes("主體") || sub.includes("Name"))) return;
                 
                 if (sub && sub.toLowerCase() !== 'null' && sub.length > 0) {
                     subjects.push(sub);
@@ -244,7 +247,7 @@
                 remainingObjects = [...initialObjects];
 
                 if (remainingSubjects.length === 0 || remainingObjects.length === 0) {
-                    throw new Error("試算表內無有效數據");
+                    throw new Error("試算表格式不正確 (A欄應為組別，B欄應為內容)");
                 }
 
                 document.getElementById('loading').style.display = 'none';
@@ -254,9 +257,9 @@
             } catch (err) {
                 document.getElementById('loading').innerHTML = `
                     <div style="text-align:center; padding:20px; color:red;">
-                        <h3>⚠️ 同步失敗</h3>
+                        <h3>⚠️ 資料讀取失敗</h3>
                         <p>${err.message}</p>
-                        <button onclick="location.reload()" style="margin-top:10px; padding:5px 15px;">重試</button>
+                        <button onclick="location.reload()" style="margin-top:10px; padding:8px 20px;">重新整理</button>
                     </div>
                 `;
             }
@@ -269,7 +272,6 @@
             syncSubjectLabel();
         }
 
-        // 更新選配介面的選項
         function updateSelector() {
             const selector = document.getElementById('targetSelector');
             const currentVal = selector.value;
@@ -305,10 +307,11 @@
             document.getElementById('drawLoading').style.display = 'block';
 
             setTimeout(() => {
+                // 隨機從 B 欄清單 (remainingObjects) 抽出一個
                 const idx = Math.floor(Math.random() * remainingObjects.length);
                 const topic = remainingObjects.splice(idx, 1)[0];
                 
-                // 從剩餘主體中移除
+                // 從 A 欄清單移除當前主體
                 remainingSubjects = remainingSubjects.filter(s => s !== selectedSubject);
                 
                 history.push({ subject: selectedSubject, topic: topic });
@@ -347,7 +350,7 @@
         function renderHistory() {
             const list = document.getElementById('historyList');
             if (history.length === 0) {
-                list.innerHTML = '<p style="color:#94a3b8; font-style:italic; text-align:center;">尚無開獎紀錄</p>';
+                list.innerHTML = '<p style="color:#94a3b8; font-style:italic; text-align:center; padding:1rem;">尚無抽選紀錄</p>';
                 return;
             }
             list.innerHTML = history.map(h => `
@@ -364,7 +367,7 @@
             final.style.display = 'block';
             const tbody = document.querySelector('#finalTableBody tbody');
             
-            // 保持原始雲端排序顯示最終結果
+            // 按照抽選先後順序顯示
             tbody.innerHTML = history.map(h => `
                 <tr>
                     <td><b style="color:var(--primary); font-size:1.1rem;">${h.subject}</b></td>
