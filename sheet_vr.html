@@ -8,7 +8,7 @@
         :root {
             --primary: #4f46e5;
             --primary-dark: #4338ca;
-            --accent: #f59e0b;
+            --accent: #fbbf24;
             --bg: #f8fafc;
             --card-bg: #ffffff;
             --text-main: #1e293b;
@@ -19,103 +19,123 @@
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.5; overflow-x: hidden; }
         .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
         
-        header { text-align: center; margin-bottom: 2.5rem; }
-        h1 { font-size: 2.5rem; font-weight: 900; margin-bottom: 0.5rem; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .badge { display: inline-block; padding: 0.25rem 1rem; background: #fef3c7; color: #92400e; border-radius: 9999px; font-size: 0.875rem; font-weight: 700; margin-top: 0.5rem; }
-
+        header { text-align: center; margin-bottom: 2rem; }
+        h1 { font-size: 2.2rem; font-weight: 900; margin-bottom: 0.5rem; color: #0f172a; }
+        
         .layout { display: grid; grid-template-columns: 1fr 2.5fr; gap: 1.5rem; }
         @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } }
 
+        /* 側邊欄：顯示待抽選客體 */
         .sidebar { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); height: fit-content; }
-        .sidebar h2 { font-size: 1.125rem; margin-bottom: 1rem; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
         .item-list { display: flex; flex-direction: column; gap: 0.75rem; }
         .item-card { padding: 0.75rem; background: #f1f5f9; border-radius: 0.75rem; font-size: 0.875rem; border: 1px solid #e2e8f0; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+        /* 抽選主區 */
         .main-content { display: flex; flex-direction: column; gap: 1.5rem; }
+        
+        /* 選配介面面板 */
+        .selector-panel {
+            background: #ffffff; padding: 1rem 1.5rem; border-radius: 1.2rem;
+            border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .selector-label { font-weight: 800; color: var(--text-muted); font-size: 0.9rem; }
+        .custom-select {
+            padding: 0.5rem 1rem; border-radius: 0.8rem; border: 2px solid var(--primary);
+            font-weight: 900; color: var(--primary); outline: none; cursor: pointer; background: white;
+        }
+
         .draw-box { 
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             border-radius: 2rem; padding: 3rem; text-align: center; color: white;
-            min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
             position: relative; overflow: hidden;
         }
 
-        .table-hint { font-size: 2.5rem; font-weight: 900; margin-bottom: 2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .draw-box h3 { font-size: 2.5rem; font-weight: 900; margin-bottom: 2rem; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .draw-box span.highlight { color: var(--accent); }
+
         .btn-draw { 
             background: white; color: var(--primary); border: none; padding: 1rem 2.5rem;
             font-size: 1.5rem; font-weight: 800; border-radius: 1rem; cursor: pointer;
-            transition: all 0.2s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            transition: 0.2s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
         }
-        .btn-draw:hover { transform: scale(1.05); background: #f8fafc; }
-        .btn-draw:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-draw:hover { transform: scale(1.05); }
 
-        .result-reveal { animation: zoomIn 0.5s ease-out; width: 100%; }
-        .result-topic { font-size: 1.7rem; font-weight: 900; background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; line-height: 1.4; text-align: left; }
-        .btn-next { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; margin-top: 2rem; font-weight: 700; cursor: pointer; }
-        .btn-next:hover { background: rgba(255,255,255,0.3); }
+        /* 結果揭曉 */
+        .result-topic { font-size: 1.8rem; font-weight: 900; background: rgba(255,255,255,0.15); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; line-height: 1.4; text-align: left; width: 100%; }
 
         .history-box { background: var(--card-bg); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid #e2e8f0; }
-        .history-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem; border-bottom: 1px solid #f1f5f9; gap: 1rem; }
-        .history-item:last-child { border: none; }
-        .hist-table { background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-weight: 900; font-size: 1rem; min-width: 60px; text-align: center; }
-        .hist-content { flex: 1; font-weight: 700; font-size: 1.125rem; color: #334155; white-space: pre-wrap; }
+        .history-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.8rem; border-bottom: 1px solid #f1f5f9; gap: 1rem; }
+        .hist-tag { background: var(--primary); color: white; padding: 2px 8px; border-radius: 6px; font-weight: 900; font-size: 0.9rem; shrink: 0; }
+        .hist-content { flex: 1; font-weight: 700; color: #334155; white-space: pre-wrap; }
 
+        /* 最終報表 */
         .final-table { background: white; border-radius: 2rem; padding: 2rem; border: 4px solid var(--primary); margin-top: 2rem; display: none; }
-        .final-table.show { display: block; animation: slideUp 0.8s ease; }
         table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
-        th { background: #f8fafc; padding: 1rem; text-align: left; font-size: 0.875rem; color: var(--text-muted); border-bottom: 2px solid #e2e8f0; }
+        th { background: #f8fafc; padding: 1rem; text-align: left; color: var(--text-muted); border-bottom: 2px solid #e2e8f0; }
         td { padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
 
+        /* 讀取畫面 */
         .loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .no-print { display: block; }
-        @media print { .no-print { display: none !important; } .final-table { border: none; padding: 0; } body { background: white; } }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        #confetti-canvas { position: fixed; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; z-index: 100; }
+        @media print { .no-print { display: none !important; } .final-table { border: none; padding: 0; display: block !important; } }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
     <div id="loading" class="loading-screen">
         <div class="spinner"></div>
-        <p style="font-weight: bold; color: #475569;">正在從雲端同步題目...</p>
+        <p style="font-weight: bold; color: #475569;">正在從雲端讀取主體與客體資料...</p>
     </div>
 
-    <canvas id="confetti-canvas"></canvas>
+    <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; z-index: 100;"></canvas>
+
     <div class="container" id="mainUI" style="display:none;">
         <header class="no-print">
             <h1>🏆 現場隨機抽選系統</h1>
-            <div class="badge">雲端同步 · 公開透明</div>
         </header>
 
         <div class="layout no-print" id="gameArea">
             <div class="sidebar">
-                <h2>📋 待分配題目</h2>
+                <h2 style="font-size:1.1rem; margin-bottom:1rem;">📋 待分配客體內容</h2>
                 <div id="itemList" class="item-list"></div>
             </div>
 
             <div class="main-content">
+                <!-- 選配介面面板 -->
+                <div class="selector-panel" id="selectorPanel">
+                    <div class="selector-label">📍 請選擇本次抽選的主體：</div>
+                    <select id="targetSelector" class="custom-select" onchange="syncSubjectLabel()">
+                        <!-- 動態生成選項 -->
+                    </select>
+                </div>
+
                 <div class="draw-box" id="drawBox">
                     <div id="drawInitial">
-                        <div class="table-hint">請抽選 <span id="currentTableLabel">A</span> 桌 題目</div>
+                        <h3>請抽選 <span id="currentSubjectLabel" class="highlight">載入中</span> 題目</h3>
                         <button class="btn-draw" onclick="startDraw()">🎯 開始抽選</button>
                     </div>
+                    
                     <div id="drawLoading" style="display:none;">
-                        <div class="spinner" style="margin: 0 auto 1.5rem; border-top-color: white;"></div>
-                        <p style="font-size: 1.5rem; font-weight: 700; letter-spacing: 2px;">命運轉動中...</p>
+                        <div class="spinner" style="border-top-color: white; margin: 0 auto 1.5rem;"></div>
+                        <p style="font-size: 1.5rem; font-weight: 700;">命運轉動中...</p>
                     </div>
-                    <div id="drawResult" style="display:none;" class="result-reveal">
-                        <p style="font-size: 1.25rem; opacity: 0.8;">🎉 <span id="resTable"></span> 桌 結果揭曉 🎉</p>
+
+                    <div id="drawResult" style="display:none; width: 100%; animation: zoomIn 0.3s;">
+                        <p style="font-size: 1.25rem; opacity: 0.8;">🎉 <span id="resSubject" class="highlight"></span> 結果揭曉 🎉</p>
                         <div class="result-topic" id="resName" style="white-space: pre-wrap;"></div>
-                        <button class="btn-next" onclick="prepareNext()">🚀 準備下一桌</button>
+                        <button class="btn-draw" style="margin-top: 2rem; font-size: 1.1rem; background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4);" onclick="prepareNext()">🚀 準備下一位</button>
                     </div>
                 </div>
 
                 <div class="history-box">
-                    <h2 style="margin-bottom: 1rem;">📝 即時結果紀錄</h2>
+                    <h2 style="font-size:1.1rem; margin-bottom:1rem;">📝 即時結果紀錄</h2>
                     <div id="historyList"></div>
                 </div>
             </div>
@@ -123,143 +143,184 @@
 
         <div class="final-table" id="finalResult">
             <div style="text-align: center;">
-                <h2 style="font-size: 2rem; font-weight: 900;">最終分配總表</h2>
-                <p style="color: #64748b;">所有桌次題目分配完畢</p>
+                <h2 style="font-size: 2.2rem; font-weight: 900;">最終分配總表</h2>
             </div>
             <table id="finalTableBody">
                 <thead>
                     <tr>
-                        <th width="100">桌次</th>
-                        <th>獲配題目內容</th>
+                        <th width="200">主體 (組別/對象)</th>
+                        <th>獲配客體 (題目/內容)</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
             <div style="text-align: center; margin-top: 2rem;" class="no-print">
-                <button class="btn-draw" style="background: #1e293b; color: white; font-size: 1.1rem; padding: 0.8rem 2rem;" onclick="window.print()">列印結果 / 存成 PDF</button>
-                <button class="btn-draw" style="background: #f1f5f9; color: #64748b; margin-left: 10px; font-size: 1.1rem; padding: 0.8rem 2rem;" onclick="resetAll()">重新開始</button>
+                <button class="btn-draw" style="background: #1e293b; color: white; font-size: 1.1rem;" onclick="window.print()">列印結果 / 存成 PDF</button>
+                <button class="btn-draw" style="background: #f1f5f9; color: #64748b; margin-left: 10px; font-size: 1.1rem;" onclick="location.reload()">重新讀取雲端</button>
             </div>
         </div>
     </div>
 
-    <!-- 引用紙屑特效庫 -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
-        // 設定 CSV 發佈網址
+        // 目標 CSV 網址
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vStKJN9IwSsFTofA0SYwjT0_Y9ae80CbEHHVvm41j1gsHuV6ishpSKn5m4IBi856Yi2eIglwX_QybxS/pub?output=csv";
         
-        let initialPool = [];
-        let pool = [];
+        let initialSubjects = []; // 雲端抓取的所有主體 (A欄)
+        let initialObjects = [];  // 雲端抓取的所有客體 (B欄)
+        let remainingSubjects = []; 
+        let remainingObjects = []; 
         let history = [];
-        const TABLE_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
-        // 強化版 CSV 解析器 (處理換行與雙引號)
+        // 健全的 CSV 解析器：處理雙欄位、雙引號與換行
         function parseCSV(text) {
             const rows = [];
+            let currentLine = [];
             let currentCell = '';
             let inQuotes = false;
-            let currentRow = [];
 
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
                 const nextChar = text[i + 1];
 
-                if (char === '"' && inQuotes && nextChar === '"') {
-                    currentCell += '"';
-                    i++;
-                } else if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    currentRow.push(currentCell.trim());
-                    currentCell = '';
-                } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                    if (currentCell !== '' || currentRow.length > 0) {
-                        currentRow.push(currentCell.trim());
-                        rows.push(currentRow);
-                        currentCell = '';
-                        currentRow = [];
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        currentCell += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
                     }
+                } else if (char === ',' && !inQuotes) {
+                    currentLine.push(currentCell.trim());
+                    currentCell = '';
+                } else if ((char === '\n' || char === '\r') && !inQuotes) {
                     if (char === '\r' && nextChar === '\n') i++;
+                    currentLine.push(currentCell.trim());
+                    if (currentLine.join('').length > 0) rows.push(currentLine);
+                    currentLine = [];
+                    currentCell = '';
                 } else {
                     currentCell += char;
                 }
             }
-            if (currentCell !== '' || currentRow.length > 0) {
-                currentRow.push(currentCell.trim());
-                rows.push(currentRow);
+            if (currentCell || currentLine.length > 0) {
+                currentLine.push(currentCell.trim());
+                rows.push(currentLine);
             }
 
-            // 智慧過濾：只取第一欄有內容的題目，且過濾掉標題與無效短字串
-            return rows.map(r => r[0]).filter(content => {
-                if (!content || content.toLowerCase() === 'null') return false;
-                if (content.length < 5) return false;
-                if (content === "題目" || content === "Topic") return false;
-                return true;
+            // 過濾並拆分欄位
+            const subjects = [];
+            const objects = [];
+
+            rows.forEach((row, index) => {
+                const sub = row[0];
+                const obj = row[1];
+                
+                // 智慧過濾：排除標題列 (檢查是否包含關鍵字或長度)
+                if (index === 0 && (sub.includes("組") || sub.includes("主體") || sub.includes("Name"))) return;
+                
+                if (sub && sub.toLowerCase() !== 'null' && sub.length > 0) {
+                    subjects.push(sub);
+                }
+                if (obj && obj.toLowerCase() !== 'null' && obj.length > 0) {
+                    objects.push(obj);
+                }
             });
+
+            return { subjects, objects };
         }
 
         async function fetchSheetData() {
             try {
-                // 加上時間戳防止快取
                 const response = await fetch(SHEET_CSV_URL + "&t=" + Date.now());
-                if (!response.ok) throw new Error("網路請求失敗");
+                if (!response.ok) throw new Error("網路連線失敗");
                 const text = await response.text();
                 
-                initialPool = parseCSV(text);
-                pool = [...initialPool];
+                const data = parseCSV(text);
+                initialSubjects = data.subjects;
+                initialObjects = data.objects;
                 
-                if (pool.length === 0) throw new Error("讀取不到任何題目");
-                
+                remainingSubjects = [...initialSubjects];
+                remainingObjects = [...initialObjects];
+
+                if (remainingSubjects.length === 0 || remainingObjects.length === 0) {
+                    throw new Error("試算表內無有效數據");
+                }
+
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('mainUI').style.display = 'block';
+                
                 initUI();
             } catch (err) {
-                console.error(err);
                 document.getElementById('loading').innerHTML = `
-                    <div style="text-align:center; padding:20px; background:white; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
-                        <p style="color:red; font-weight:bold; font-size:1.2rem;">⚠️ 無法抓取雲端資料</p>
-                        <p style="color:#64748b; margin:10px 0;">請確認試算表已設為「發佈到網路」並選擇 CSV 格式。</p>
-                        <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; background:#4f46e5; color:white; border:none; border-radius:8px; cursor:pointer;">重試連線</button>
+                    <div style="text-align:center; padding:20px; color:red;">
+                        <h3>⚠️ 同步失敗</h3>
+                        <p>${err.message}</p>
+                        <button onclick="location.reload()" style="margin-top:10px; padding:5px 15px;">重試</button>
                     </div>
                 `;
             }
         }
 
         function initUI() {
+            updateSelector();
             renderSidebar();
             renderHistory();
-            const nextLabel = TABLE_LABELS[history.length];
-            document.getElementById('currentTableLabel').innerText = nextLabel || "-";
+            syncSubjectLabel();
+        }
+
+        // 更新選配介面的選項
+        function updateSelector() {
+            const selector = document.getElementById('targetSelector');
+            const currentVal = selector.value;
+            
+            selector.innerHTML = remainingSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+            
+            if (remainingSubjects.length > 0) {
+                if (!remainingSubjects.includes(currentVal)) {
+                    selector.value = remainingSubjects[0];
+                } else {
+                    selector.value = currentVal;
+                }
+            }
+        }
+
+        function syncSubjectLabel() {
+            const selector = document.getElementById('targetSelector');
+            document.getElementById('currentSubjectLabel').innerText = selector.value || "-";
         }
 
         function renderSidebar() {
             const list = document.getElementById('itemList');
-            list.innerHTML = pool.map(t => `
-                <div class="item-card">${t.split('\n')[0]}</div>
-            `).join('');
+            list.innerHTML = remainingObjects.map(t => `<div class="item-card">${t.split('\n')[0]}</div>`).join('');
         }
 
         function startDraw() {
-            if (pool.length === 0) return;
+            const selectedSubject = document.getElementById('targetSelector').value;
+            if (remainingObjects.length === 0 || !selectedSubject) return;
+
             document.getElementById('drawInitial').style.display = 'none';
+            document.getElementById('selectorPanel').style.pointerEvents = 'none';
+            document.getElementById('selectorPanel').style.opacity = '0.5';
             document.getElementById('drawLoading').style.display = 'block';
 
             setTimeout(() => {
-                const idx = Math.floor(Math.random() * pool.length);
-                const selected = pool.splice(idx, 1)[0];
-                const table = TABLE_LABELS[history.length];
+                const idx = Math.floor(Math.random() * remainingObjects.length);
+                const topic = remainingObjects.splice(idx, 1)[0];
                 
-                history.push({ table, topic: selected });
+                // 從剩餘主體中移除
+                remainingSubjects = remainingSubjects.filter(s => s !== selectedSubject);
+                
+                history.push({ subject: selectedSubject, topic: topic });
                 
                 document.getElementById('drawLoading').style.display = 'none';
                 document.getElementById('drawResult').style.display = 'block';
-                document.getElementById('resTable').innerText = table;
-                document.getElementById('resName').innerText = selected;
+                document.getElementById('resSubject').innerText = selectedSubject;
+                document.getElementById('resName').innerText = topic;
                 
                 renderSidebar();
                 renderHistory();
                 
-                // 噴發慶祝紙屑
                 confetti({
                     particleCount: 150,
                     spread: 70,
@@ -270,24 +331,28 @@
         }
 
         function prepareNext() {
-            if (pool.length === 0) {
+            if (remainingObjects.length === 0 || remainingSubjects.length === 0) {
                 showFinal();
                 return;
             }
             document.getElementById('drawResult').style.display = 'none';
             document.getElementById('drawInitial').style.display = 'block';
-            initUI();
+            document.getElementById('selectorPanel').style.pointerEvents = 'auto';
+            document.getElementById('selectorPanel').style.opacity = '1';
+            
+            updateSelector();
+            syncSubjectLabel();
         }
 
         function renderHistory() {
             const list = document.getElementById('historyList');
             if (history.length === 0) {
-                list.innerHTML = '<p style="color:#94a3b8; font-style:italic; text-align:center; padding:1rem;">尚無紀錄</p>';
+                list.innerHTML = '<p style="color:#94a3b8; font-style:italic; text-align:center;">尚無開獎紀錄</p>';
                 return;
             }
             list.innerHTML = history.map(h => `
                 <div class="history-item">
-                    <div class="hist-table">${h.table} 桌</div>
+                    <span class="hist-tag">${h.subject}</span>
                     <div class="hist-content">${h.topic}</div>
                 </div>
             `).join('');
@@ -296,23 +361,18 @@
         function showFinal() {
             document.getElementById('gameArea').style.display = 'none';
             const final = document.getElementById('finalResult');
-            final.classList.add('show');
+            final.style.display = 'block';
             const tbody = document.querySelector('#finalTableBody tbody');
+            
+            // 保持原始雲端排序顯示最終結果
             tbody.innerHTML = history.map(h => `
                 <tr>
-                    <td><span style="display:inline-block; padding:5px 12px; background:#4f46e5; color:white; border-radius:8px; font-weight:bold;">${h.table} 桌</span></td>
-                    <td style="font-weight: bold; font-size:1.1rem; white-space: pre-wrap; color:#1e293b;">${h.topic}</td>
+                    <td><b style="color:var(--primary); font-size:1.1rem;">${h.subject}</b></td>
+                    <td style="font-weight: 700; white-space: pre-wrap;">${h.topic}</td>
                 </tr>
             `).join('');
         }
 
-        function resetAll() {
-            if(!confirm("確定要重置並重新開始嗎？開獎紀錄將會被清空。")) return;
-            // 重新載入網頁以獲取最新雲端資料並重置狀態
-            location.reload();
-        }
-
-        // 初始化抓取資料
         fetchSheetData();
     </script>
 </body>
