@@ -16,7 +16,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.5; overflow-x: hidden; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.5; }
         .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1rem; }
         
         header { text-align: center; margin-bottom: 2rem; }
@@ -336,13 +336,23 @@
             const buttonArea = element.querySelector('.no-print');
             if (buttonArea) buttonArea.style.display = 'none';
 
-            // 設定 PDF 選項
+            // 確保頁面滾動到最上方，避免手機版 html2canvas 截圖偏移或截斷
+            window.scrollTo(0, 0);
+
+            // 設定 PDF 選項 (加入防止截斷的關鍵設定)
             const opt = {
                 margin:       10, // 邊界
                 filename:     '抽選最終結果.pdf', // 下載的檔案名稱
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true }, // 確保畫質清晰
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true,
+                    scrollY: 0, // 強制從最頂端開始抓取
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight // 確保抓到完整高度
+                },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: 'css', avoid: 'tr' } // 確保表格內容(tr)不會被從中間切斷
             };
 
             // 執行轉換與下載
