@@ -154,14 +154,18 @@
                 </thead>
                 <tbody></tbody>
             </table>
+            <!-- 更新這裡：改用 downloadPDF() 函數來適應手機版下載 -->
             <div style="text-align: center; margin-top: 2rem;" class="no-print">
-                <button class="btn-draw" style="background: #1e293b; color: white; font-size: 1.1rem;" onclick="window.print()">列印結果 / 存成 PDF</button>
+                <button class="btn-draw" style="background: #1e293b; color: white; font-size: 1.1rem;" onclick="downloadPDF()">下載結果 PDF</button>
                 <button class="btn-draw" style="background: #f1f5f9; color: #64748b; margin-left: 10px; font-size: 1.1rem;" onclick="location.reload()">重新讀取雲端</button>
             </div>
         </div>
     </div>
 
+    <!-- 引入動畫與 PDF 轉換套件 -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <script>
         // ==========================================
         // ⚠️ 請將下方的網址替換成您部署出來的 GAS 網址 ⚠️
@@ -187,7 +191,6 @@
                     throw new Error("後端 API 發生錯誤：" + data.message);
                 }
                 
-                // 由於已經是 JSON，可以直接指定，不再需要 parseCSV() 了！
                 initialSubjects = data.subjects;
                 initialObjects = data.objects;
                 
@@ -322,6 +325,31 @@
                     <td style="font-weight: 700; white-space: pre-wrap;">${h.topic}</td>
                 </tr>
             `).join('');
+        }
+
+        // 專為手機與桌面設計的 PDF 下載功能
+        function downloadPDF() {
+            // 取得最終報表的區域
+            const element = document.getElementById('finalResult');
+            
+            // 為了不讓按鈕也被轉進 PDF 裡面，先暫時隱藏按鈕區域 (.no-print)
+            const buttonArea = element.querySelector('.no-print');
+            if (buttonArea) buttonArea.style.display = 'none';
+
+            // 設定 PDF 選項
+            const opt = {
+                margin:       10, // 邊界
+                filename:     '抽選最終結果.pdf', // 下載的檔案名稱
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true }, // 確保畫質清晰
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // 執行轉換與下載
+            html2pdf().set(opt).from(element).save().then(() => {
+                // 下載完成後，將按鈕重新顯示出來
+                if (buttonArea) buttonArea.style.display = 'block';
+            });
         }
 
         // 啟動 API 資料抓取
