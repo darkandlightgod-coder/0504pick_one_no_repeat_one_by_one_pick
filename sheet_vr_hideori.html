@@ -60,6 +60,7 @@
             background: white; color: var(--primary); border: none; padding: 1rem 2.5rem;
             font-size: 1.5rem; font-weight: 800; border-radius: 1rem; cursor: pointer;
             transition: 0.2s; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            display: inline-block;
         }
         .btn-draw:hover { transform: scale(1.05); }
 
@@ -120,6 +121,9 @@
                     <div id="drawInitial">
                         <h3>請抽選 <span id="currentSubjectLabel" class="highlight">載入中</span> 題目</h3>
                         <button class="btn-draw" onclick="startDraw()">🎯 開始抽選</button>
+                        <br>
+                        <!-- 新增的自動分配剩餘名單按鈕 -->
+                        <button class="btn-draw" style="margin-top: 1.5rem; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); font-size: 1rem; padding: 0.8rem 1.5rem;" onclick="autoDrawRemaining()">⚡ 自動分配剩餘名單</button>
                     </div>
                     
                     <div id="drawLoading" style="display:none;">
@@ -154,7 +158,6 @@
                 </thead>
                 <tbody></tbody>
             </table>
-            <!-- 更新這裡：改用 downloadPDF() 函數來適應手機版下載 -->
             <div style="text-align: center; margin-top: 2rem;" class="no-print">
                 <button class="btn-draw" style="background: #1e293b; color: white; font-size: 1.1rem;" onclick="downloadPDF()">下載結果 PDF</button>
                 <button class="btn-draw" style="background: #f1f5f9; color: #64748b; margin-left: 10px; font-size: 1.1rem;" onclick="location.reload()">重新讀取雲端</button>
@@ -170,7 +173,7 @@
         // ==========================================
         // ⚠️ 請將下方的網址替換成您部署出來的 GAS 網址 ⚠️
         // ==========================================
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyPXRNK0k8pZ5WpaUqtwEHPoOqW0H1ZAtRXgyqgkbECeGhEV1zkFTbFpG3a8-VLFe0M/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/請在此填入您的API網址/exec";
         
         let initialSubjects = []; 
         let initialObjects = [];  
@@ -186,7 +189,6 @@
                 
                 const data = await response.json();
                 
-                // 檢查後端回傳的狀態
                 if (data.status === "error") {
                     throw new Error("後端 API 發生錯誤：" + data.message);
                 }
@@ -258,7 +260,7 @@
             document.getElementById('drawLoading').style.display = 'block';
 
             setTimeout(() => {
-                // 隨機從 B 欄清單 (remainingObjects) 抽出一個
+                // 隨機從 B 欄清單抽出一個
                 const idx = Math.floor(Math.random() * remainingObjects.length);
                 const topic = remainingObjects.splice(idx, 1)[0];
                 
@@ -282,6 +284,47 @@
                     colors: ['#4f46e5', '#7c3aed', '#fbbf24']
                 });
             }, 1500);
+        }
+
+        // 新增的「自動分配剩餘名單」功能
+        function autoDrawRemaining() {
+            if (remainingObjects.length === 0 || remainingSubjects.length === 0) {
+                showFinal();
+                return;
+            }
+
+            // 鎖定介面並顯示讀取中
+            document.getElementById('drawInitial').style.display = 'none';
+            document.getElementById('selectorPanel').style.pointerEvents = 'none';
+            document.getElementById('selectorPanel').style.opacity = '0.5';
+            document.getElementById('drawLoading').style.display = 'block';
+
+            // 稍微延遲讓使用者有動畫轉換的感覺
+            setTimeout(() => {
+                // 自動迴圈配對，直到主體或客體任一邊發完為止
+                while (remainingSubjects.length > 0 && remainingObjects.length > 0) {
+                    const subject = remainingSubjects.shift(); // 依序抓取剩下的主體
+                    const objIdx = Math.floor(Math.random() * remainingObjects.length); // 隨機抓取剩下的客體
+                    const topic = remainingObjects.splice(objIdx, 1)[0];
+                    history.push({ subject: subject, topic: topic });
+                }
+
+                // 清空側邊欄狀態
+                renderSidebar();
+                renderHistory();
+                
+                // 直接進入結算頁面並撒紙花慶祝
+                document.getElementById('drawLoading').style.display = 'none';
+                
+                confetti({
+                    particleCount: 300,
+                    spread: 120,
+                    origin: { y: 0.5 },
+                    colors: ['#4f46e5', '#7c3aed', '#fbbf24', '#ff0000', '#00ff00']
+                });
+                
+                showFinal();
+            }, 1000);
         }
 
         function prepareNext() {
@@ -327,37 +370,28 @@
             `).join('');
         }
 
-        // 專為手機與桌面設計的 PDF 下載功能
         function downloadPDF() {
-            // 取得最終報表的區域
             const element = document.getElementById('finalResult');
-            
-            // 為了不讓按鈕也被轉進 PDF 裡面，先暫時隱藏按鈕區域 (.no-print)
             const buttonArea = element.querySelector('.no-print');
             if (buttonArea) buttonArea.style.display = 'none';
-
-            // 確保頁面滾動到最上方，避免手機版 html2canvas 截圖偏移或截斷
             window.scrollTo(0, 0);
 
-            // 設定 PDF 選項 (加入防止截斷的關鍵設定)
             const opt = {
-                margin:       10, // 邊界
-                filename:     '抽選最終結果.pdf', // 下載的檔案名稱
+                margin:       10,
+                filename:     '抽選最終結果.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { 
                     scale: 2, 
                     useCORS: true,
-                    scrollY: 0, // 強制從最頂端開始抓取
+                    scrollY: 0, 
                     windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight // 確保抓到完整高度
+                    windowHeight: document.documentElement.scrollHeight 
                 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: 'css', avoid: 'tr' } // 確保表格內容(tr)不會被從中間切斷
+                pagebreak:    { mode: 'css', avoid: 'tr' } 
             };
 
-            // 執行轉換與下載
             html2pdf().set(opt).from(element).save().then(() => {
-                // 下載完成後，將按鈕重新顯示出來
                 if (buttonArea) buttonArea.style.display = 'block';
             });
         }
